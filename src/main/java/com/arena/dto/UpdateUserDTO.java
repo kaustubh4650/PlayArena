@@ -1,22 +1,16 @@
 package com.arena.dto;
 
-import com.arena.entities.Role;
-
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class UserResDTO {
-	
+public class UpdateUserDTO {
+	@NotBlank
 	private String name;
-
+	@NotBlank
 	private String address;
-
-	private String email;
-	
+	@NotBlank
 	private String phone;
-	
-	private Role role;
 }

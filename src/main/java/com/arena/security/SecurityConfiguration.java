@@ -19,7 +19,8 @@ public class SecurityConfiguration {
                     "/swagger-resources/**",
                     "/swagger-ui.html",
                     "/users/login", // <-- allow login
-                    "/users/register" // <-- allow register
+                    "/users/register", // <-- allow register
+                    "/users/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             );
