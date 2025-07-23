@@ -3,6 +3,7 @@ package com.arena.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,7 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.arena.dto.ChangePasswordDTO;
 import com.arena.dto.LoginReqDTO;
+import com.arena.dto.TurfReqDTO;
 import com.arena.dto.UpdateManagerDTO;
+import com.arena.dto.UpdateTurfDTO;
 import com.arena.service.ManagerService;
 
 import jakarta.validation.Valid;
@@ -54,5 +57,35 @@ public class ManagerController {
 				.body(managerService.updateManagerDetails(id,dto));
 	}
 	
-
+	//ADD TURF
+	@PostMapping("/turfs/{managerId}")
+	public ResponseEntity<?> addTurf(@Valid @RequestBody TurfReqDTO dto,
+			 @PathVariable Long managerId){
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(managerService.addTurf(dto,managerId));
+	}
+	
+	//DELETE TURF
+	@DeleteMapping("/turfs/{id}")
+	public ResponseEntity<?> deleteTurfById(@PathVariable Long id){
+		return ResponseEntity.status(HttpStatus.OK)
+				.body(managerService.deleteTurfById(id));
+	}
+	
+	//UPDATE TURF
+	@PutMapping("/turfs/{id}")
+	public ResponseEntity<?> updateTurf(@PathVariable Long id,
+			@Valid @RequestBody UpdateTurfDTO dto){
+		return ResponseEntity.status(HttpStatus.OK)
+				.body(managerService.updateTurfDetails(id,dto));
+	}
+	
+	//GET TURF BY ID
+	@GetMapping("/turfs/{id}")
+	public ResponseEntity<?>getTurfById(@PathVariable Long id){
+		return ResponseEntity.status(HttpStatus.OK)
+				.body(managerService.getTurfById(id));
+	}
+	
+	
 }

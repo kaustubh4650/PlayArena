@@ -1,9 +1,5 @@
 package com.arena.entities;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,7 +8,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -21,40 +18,37 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Table(name = "managers")
-@NoArgsConstructor
+@Table(name = "turfs")
 @Getter
 @Setter
-@ToString(callSuper = true, exclude = "turfs")
+@NoArgsConstructor
+@ToString(callSuper = true)
 @EqualsAndHashCode(of = "name", callSuper = false)
-public class Manager extends BaseEntity{
-	
+public class Turf extends BaseEntity{
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long managerId;
-	
-	@Column(length = 100)
+	private Long turfId;
+
+	@Column(length = 100, nullable = false)
 	private String name;
-	
-	@Column(length = 255)
-	private String address;
-	
-	@Column(unique = true,length = 50)
-	private String email;
-	
-	@Column(length = 200)
-	private String password;
-	
-	@Column(length = 10)	
-	private String phone;
-	
+
+	@Column(length = 100, nullable = false)
+	private String location;
+
+	@Column(nullable = false)
+	private double pricePerHour;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private Role role = Role.MANAGER;
+	private Status status = Status.AVAILABLE;
 	
-	@OneToMany(mappedBy = "manager", orphanRemoval = true,
-			cascade = CascadeType.ALL,fetch = FetchType.LAZY)
-	private List<Turf> turfs = new ArrayList<>();
+	@Column(length = 255, nullable = false)
+	private String description;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "manager_id", nullable = false)
+    private Manager manager;
 	
+
 }
