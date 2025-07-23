@@ -1,16 +1,20 @@
 package com.arena.controller;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.arena.dto.ChangePasswordDTO;
 import com.arena.dto.LoginReqDTO;
@@ -58,11 +62,14 @@ public class ManagerController {
 	}
 	
 	//ADD TURF
-	@PostMapping("/turfs/{managerId}")
-	public ResponseEntity<?> addTurf(@Valid @RequestBody TurfReqDTO dto,
-			 @PathVariable Long managerId){
-		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(managerService.addTurf(dto,managerId));
+	@PostMapping(value = "/turfs/{managerId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<?> addTurf(
+			 	@ModelAttribute TurfReqDTO dto,
+		        @RequestPart("image") MultipartFile imageFile,
+		        @PathVariable Long managerId) {
+
+		    return ResponseEntity.status(HttpStatus.CREATED)
+		            .body(managerService.addTurf(dto, imageFile, managerId));
 	}
 	
 	//DELETE TURF
@@ -73,11 +80,12 @@ public class ManagerController {
 	}
 	
 	//UPDATE TURF
-	@PutMapping("/turfs/{id}")
+	@PutMapping(value = "/turfs/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<?> updateTurf(@PathVariable Long id,
-			@Valid @RequestBody UpdateTurfDTO dto){
-		return ResponseEntity.status(HttpStatus.OK)
-				.body(managerService.updateTurfDetails(id,dto));
+	                                    @ModelAttribute UpdateTurfDTO dto,
+	                                    @RequestPart(value = "image", required = false) MultipartFile imageFile) {
+	    return ResponseEntity.status(HttpStatus.OK)
+	            .body(managerService.updateTurfDetails(id, dto, imageFile));
 	}
 	
 	//GET TURF BY ID

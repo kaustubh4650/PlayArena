@@ -24,4 +24,6 @@ public class TurfResDTO {
 	 private Long managerId;
 	 
 	 private String managerName;
+	 
+	 private String imagePath; 
 }

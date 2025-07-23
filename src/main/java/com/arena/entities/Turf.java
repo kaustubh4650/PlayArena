@@ -50,5 +50,7 @@ public class Turf extends BaseEntity{
     @JoinColumn(name = "manager_id", nullable = false)
     private Manager manager;
 	
+    @Column(length = 255)
+    private String imagePath;
 
 }

@@ -1,8 +1,13 @@
 package com.arena.service;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.UUID;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.arena.custom_exception.ApiException;
 import com.arena.custom_exception.ResourceNotFoundException;
@@ -21,7 +26,6 @@ import com.arena.entities.Status;
 import com.arena.entities.Turf;
 
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 @Service
@@ -87,22 +91,44 @@ public class ManagerServiceImpl implements ManagerService {
 //-------------------------------------------------------------------------------------------
 
 	@Override
-	public TurfResDTO addTurf(@Valid TurfReqDTO dto, Long managerId) {
+	public TurfResDTO addTurf(TurfReqDTO dto,MultipartFile imageFile, Long managerId) {
 
-		Manager manager = managerDao.findById(managerId)
-				.orElseThrow(() -> new ResourceNotFoundException("Manager not found"));
+		 Manager manager = managerDao.findById(managerId)
+		            .orElseThrow(() -> new ResourceNotFoundException("Manager not found"));
 
-		Turf turf = modelMapper.map(dto, Turf.class);
-		turf.setStatus(Status.AVAILABLE);
-		turf.setManager(manager);
+		    Turf turf = modelMapper.map(dto, Turf.class);
+		    turf.setStatus(Status.AVAILABLE);
+		    turf.setManager(manager);
 
-		Turf savedTurf = turfDao.save(turf);
+		    if (imageFile != null && !imageFile.isEmpty()) {
+		        try {
+		            String uploadDir =  System.getProperty("user.dir") +"/uploads/images/";
+		            String filename = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
 
-		TurfResDTO res = modelMapper.map(savedTurf, TurfResDTO.class);
-		res.setManagerId(manager.getManagerId());
-		res.setManagerName(manager.getName());
+		            File uploadPath = new File(uploadDir);
+		            if (!uploadPath.exists()) {
+		                System.out.println("Creating directory: " + uploadPath.getAbsolutePath());
+		                uploadPath.mkdirs();
+		            }
 
-		return res;
+		            File destFile = new File(uploadDir + filename);
+		            System.out.println("Final destination path: " + destFile.getAbsolutePath());
+		            System.out.println("Image file exists? " + imageFile.isEmpty());
+		            imageFile.transferTo(destFile);
+
+		            turf.setImagePath("images/" + filename);
+
+		        } catch (IOException e) {
+		            throw new RuntimeException("Failed to store image", e);
+		        }
+		    }
+
+		    Turf saved = turfDao.save(turf);
+
+		    TurfResDTO res = modelMapper.map(saved, TurfResDTO.class);
+		    res.setManagerId(manager.getManagerId());
+		    res.setManagerName(manager.getName());
+		    return res;
 	}
 
 //-------------------------------------------------------------------------------------------
@@ -112,6 +138,16 @@ public class ManagerServiceImpl implements ManagerService {
 		Turf turf = turfDao.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Turf not found"));
 		
+	    // Delete associated image if exists
+	    if (turf.getImagePath() != null) {
+	        String imagePath = System.getProperty("user.dir") + "/uploads/" + turf.getImagePath();
+	        File imageFile = new File(imagePath);
+	        if (imageFile.exists()) {
+	            boolean deleted = imageFile.delete();
+	            System.out.println("Image deleted: " + deleted);
+	        }
+	    }
+		
 		 turfDao.delete(turf);
 		 
 		 return new ApiResponse("Turf deleted successfully");
@@ -120,20 +156,52 @@ public class ManagerServiceImpl implements ManagerService {
 //-------------------------------------------------------------------------------------------
 	
 	@Override
-	public TurfResDTO updateTurfDetails(Long id, UpdateTurfDTO dto) {
+	public TurfResDTO updateTurfDetails(Long id, UpdateTurfDTO dto,MultipartFile imageFile) {
 		
-		Turf turf = turfDao.findById(id)
-	            .orElseThrow(() -> new ResourceNotFoundException("Turf not found"));
-		
-		 modelMapper.map(dto, turf);
-		 
-		 Turf updated = turfDao.save(turf);
-		 
-		 TurfResDTO res = modelMapper.map(updated, TurfResDTO.class);
+		 Turf turf = turfDao.findById(id)
+		            .orElseThrow(() -> new ResourceNotFoundException("Turf not found"));
+
+		    // Update basic fields
+		    modelMapper.map(dto, turf);
+
+		    // Handle new image upload (optional)
+		    if (imageFile != null && !imageFile.isEmpty()) {
+		        try {
+		            //  Delete old image file (if exists)
+		            if (turf.getImagePath() != null) {
+		                String oldImagePath = System.getProperty("user.dir") + "/uploads/" + turf.getImagePath();
+		                File oldImageFile = new File(oldImagePath);
+		                if (oldImageFile.exists()) {
+		                    boolean deleted = oldImageFile.delete();
+		                    System.out.println("Old image deleted: " + deleted);
+		                }
+		            }
+
+		            //  Store new image
+		            String uploadDir = System.getProperty("user.dir") + "/uploads/images/";
+		            String filename = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
+
+		            File uploadPath = new File(uploadDir);
+		            if (!uploadPath.exists()) uploadPath.mkdirs();
+
+		            File destFile = new File(uploadDir + filename);
+		            imageFile.transferTo(destFile);
+
+		            turf.setImagePath("images/" + filename);
+
+		        } catch (IOException e) {
+		            e.printStackTrace();
+		            throw new RuntimeException("Failed to store image", e);
+		        }
+		    }
+
+		    Turf updated = turfDao.save(turf);
+
+		    TurfResDTO res = modelMapper.map(updated, TurfResDTO.class);
 		    res.setManagerId(updated.getManager().getManagerId());
 		    res.setManagerName(updated.getManager().getName());
-		
-		return res;
+
+		    return res;
 	}
 
 //------------------------------------------------------------------------------------------
