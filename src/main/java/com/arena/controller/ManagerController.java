@@ -1,5 +1,7 @@
 package com.arena.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.arena.dto.BookingResDTO;
 import com.arena.dto.ChangePasswordDTO;
 import com.arena.dto.LoginReqDTO;
 import com.arena.dto.SlotReqDTO;
@@ -122,4 +125,12 @@ public class ManagerController {
 		return ResponseEntity.status(HttpStatus.OK).body(managerService.deleteSlotById(slotId));
 
 	}
+	
+	//GET BOOKINGS BY TURFID
+	@GetMapping("/bookings/{turfId}")
+	public ResponseEntity<List<BookingResDTO>> getBookingsByTurf(@PathVariable Long turfId) {
+	    List<BookingResDTO> bookings = managerService.getAllBookingsByTurfId(turfId);
+	    return ResponseEntity.ok(bookings);
+	}
+
 }

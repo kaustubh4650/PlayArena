@@ -1,6 +1,5 @@
 package com.arena.dto;
 
-import java.time.LocalDate;
 import java.time.LocalTime;
 
 import com.arena.entities.Status;
@@ -13,8 +12,6 @@ import lombok.Setter;
 public class SlotResDTO {
 	
     private Long slotId;
-    
-    private LocalDate date;
     
     private LocalTime startTime;
     

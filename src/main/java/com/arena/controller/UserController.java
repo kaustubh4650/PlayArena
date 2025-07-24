@@ -1,5 +1,7 @@
 package com.arena.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -12,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.arena.dto.BookingReqDTO;
+import com.arena.dto.BookingResDTO;
 import com.arena.dto.ChangePasswordDTO;
 import com.arena.dto.LoginReqDTO;
 import com.arena.dto.ReviewReqDTO;
@@ -95,6 +99,33 @@ public class UserController {
 	@GetMapping("/{userId}/reviews")
 	public ResponseEntity<?> getAllReviewsByUser(@PathVariable Long userId) {
 		return ResponseEntity.ok(userService.getAllReviewsByUser(userId));
+	}
+	
+	// ADD BOOKING
+	@PostMapping("/bookings")
+	public ResponseEntity<?> addBooking(@Valid @RequestBody BookingReqDTO dto) {
+	    return ResponseEntity.status(HttpStatus.CREATED)
+	            .body(userService.addBooking(dto));
+	}
+	
+	//GET ALL BOOKINGS BY USERID
+	@GetMapping("/bookings/{userId}")
+	public ResponseEntity<List<BookingResDTO>> getAllBookingsByUser(@PathVariable Long userId) {
+	    return ResponseEntity.ok(userService.getAllBookingsByUser(userId));
+	}
+	
+	//CANCEL BOOKING
+	@PutMapping("/bookings/cancel/{bookingId}")
+	public ResponseEntity<BookingResDTO> cancelBooking(@PathVariable Long bookingId) {
+	    BookingResDTO res = userService.cancelBooking(bookingId);
+	    return ResponseEntity.ok(res);
+	}
+
+	//GET BOOKING DETAILS BY BOOKING ID
+	@GetMapping("/booking/{bookingId}")
+	public ResponseEntity<BookingResDTO> getBookingById(@PathVariable Long bookingId) {
+	    BookingResDTO res = userService.getBookingById(bookingId);
+	    return ResponseEntity.ok(res);
 	}
 
 }

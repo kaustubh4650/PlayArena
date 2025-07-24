@@ -13,10 +13,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.arena.custom_exception.ApiException;
 import com.arena.custom_exception.ResourceNotFoundException;
+import com.arena.dao.BookingDao;
 import com.arena.dao.ManagerDao;
 import com.arena.dao.SlotDao;
 import com.arena.dao.TurfDao;
 import com.arena.dto.ApiResponse;
+import com.arena.dto.BookingResDTO;
 import com.arena.dto.ChangePasswordDTO;
 import com.arena.dto.LoginReqDTO;
 import com.arena.dto.ManagerResDTO;
@@ -26,10 +28,13 @@ import com.arena.dto.TurfReqDTO;
 import com.arena.dto.TurfResDTO;
 import com.arena.dto.UpdateManagerDTO;
 import com.arena.dto.UpdateTurfDTO;
+import com.arena.entities.Booking;
 import com.arena.entities.Manager;
+import com.arena.entities.Payment;
 import com.arena.entities.Slot;
 import com.arena.entities.Status;
 import com.arena.entities.Turf;
+import com.arena.entities.User;
 
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -42,6 +47,7 @@ public class ManagerServiceImpl implements ManagerService {
 	private ManagerDao managerDao;
 	private TurfDao turfDao;
 	private SlotDao slotDao;
+	private BookingDao bookingDao;
 	private ModelMapper modelMapper;
 	private BCryptPasswordEncoder passwordEncoder;
 
@@ -248,9 +254,9 @@ public class ManagerServiceImpl implements ManagerService {
 
 		Turf turf = turfDao.findById(turfId).orElseThrow(() -> new ResourceNotFoundException("Turf not found"));
 
-		  boolean exists = slotDao.existsOverlappingSlot(
-			        turf, dto.getDate(), dto.getStartTime(), dto.getEndTime()
-			    );
+		boolean exists = slotDao.existsOverlappingSlot(
+		        turf, dto.getStartTime(), dto.getEndTime()
+		);
 
 		if (exists) {
 			throw new ApiException("Slot already taken for the given time");
@@ -309,13 +315,14 @@ public class ManagerServiceImpl implements ManagerService {
 		
 	    Turf turf = slot.getTurf();
 
-	    boolean overlaps = slotDao.existsOverlappingSlotExceptSelf(
-	            turf, dto.getDate(), dto.getStartTime(), dto.getEndTime(), slotId
-	    );
 
+	    boolean overlaps = slotDao.existsOverlappingSlotExceptSelf(
+	            turf, dto.getStartTime(), dto.getEndTime(), slotId
+	    );
 	    if (overlaps) {
 	        throw new ApiException("Slot overlaps with an existing slot");
 	    }
+	
 
 		modelMapper.map(dto, slot);
 
@@ -338,6 +345,41 @@ public class ManagerServiceImpl implements ManagerService {
 
 		return new ApiResponse("Slot deleted successfully");
 	}
+
+// ---------------------------------------------------------------------------------------
+
+	@Override
+	public List<BookingResDTO> getAllBookingsByTurfId(Long turfId) {
+	    List<Booking> bookings = bookingDao.findBySlotTurfTurfId(turfId);
+
+	    return bookings.stream().map(booking -> {
+	        Slot slot = booking.getSlot();
+	        Turf turf = slot.getTurf();
+	        User user = booking.getUser();
+	        Payment payment = booking.getPayment();
+
+	        BookingResDTO res = modelMapper.map(booking, BookingResDTO.class);
+	        res.setSlotId(slot.getSlotId());
+	        res.setSlotDate(booking.getBookingDate());
+	        res.setStartTime(slot.getStartTime().toString());
+	        res.setEndTime(slot.getEndTime().toString());
+
+	        res.setTurfId(turf.getTurfId());
+	        res.setTurfName(turf.getName());
+	        res.setPricePerHour(turf.getPricePerHour());
+
+	        res.setUserId(user.getUserid());
+	        res.setUserName(user.getName());
+
+	        res.setPaymentId(payment.getPaymentId());
+	        res.setAmount(payment.getAmount());
+	        res.setPaymentStatus(payment.getStatus());
+	        res.setPaymentDate(payment.getPaidAt());
+
+	        return res;
+	    }).collect(Collectors.toList());
+	}
+
 
 // ---------------------------------------------------------------------------------------
 

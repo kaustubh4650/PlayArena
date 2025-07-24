@@ -3,6 +3,8 @@ package com.arena.service;
 import java.util.List;
 
 import com.arena.dto.ApiResponse;
+import com.arena.dto.BookingReqDTO;
+import com.arena.dto.BookingResDTO;
 import com.arena.dto.ChangePasswordDTO;
 import com.arena.dto.LoginReqDTO;
 import com.arena.dto.ReviewReqDTO;
@@ -36,5 +38,15 @@ public interface UserService {
 	List<ReviewResDTO> getAllReviewsForTurf(Long turfId);
 
 	List<ReviewResDTO> getAllReviewsByUser(Long userId);
+	
+	//BOOKING
+
+	BookingResDTO  addBooking(BookingReqDTO dto);
+	
+	List<BookingResDTO> getAllBookingsByUser(Long userId);
+	
+	BookingResDTO cancelBooking(Long bookingId) ;
+	
+	BookingResDTO getBookingById(Long bookingId);
 	
 }
