@@ -11,6 +11,8 @@ import com.arena.dto.UserResDTO;
 
 public interface AdminService {
 
+	void validateCredentials(String email, String password);
+	
 	AdminResDTO loginAdmin(LoginReqDTO dto);
 
 	List<UserResDTO> getAllUsers();

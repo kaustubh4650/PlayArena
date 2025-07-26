@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -37,6 +38,20 @@ public class AdminServiceImpl implements AdminService {
 	private BCryptPasswordEncoder passwordEncoder;
 	private ModelMapper modelMapper;
 
+	
+	@Override
+	public void validateCredentials(String email, String password) {
+	    Admin admin = adminDao.findByEmail(email)
+	        .orElseThrow(() -> new ResourceNotFoundException("Admin not found"));
+
+	    if (!passwordEncoder.matches(password, admin.getPassword())) {
+	        throw new BadCredentialsException("Invalid password");
+	    }
+	}
+
+	
+//---------------------------------------------------------------------------------------------
+	
 	@Override
 	public AdminResDTO loginAdmin(LoginReqDTO dto) {
 		Admin admin = adminDao.findByEmail(dto.getEmail())

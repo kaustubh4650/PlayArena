@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -51,6 +52,19 @@ public class UserServiceImpl implements UserService {
 	private ModelMapper modelMapper;
 	private BCryptPasswordEncoder passwordEncoder;
 
+	
+	@Override
+	public void validateCredentials(String email, String password) {
+	    User user = userDao.findByEmail(email)
+	        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+	    if (!passwordEncoder.matches(password, user.getPassword())) {
+	        throw new BadCredentialsException("Invalid password");
+	    }
+	}
+	
+//-------------------------------------------------------------------------------------
+	
 	@Override
 	public UserResDTO addUser(UserReqDTO dto) {
 			//Checking for duplicate email

@@ -14,6 +14,8 @@ import com.arena.dto.UserReqDTO;
 import com.arena.dto.UserResDTO;
 
 public interface UserService {
+	
+	void validateCredentials(String email, String password);
 
 	UserResDTO addUser(UserReqDTO dto);
 

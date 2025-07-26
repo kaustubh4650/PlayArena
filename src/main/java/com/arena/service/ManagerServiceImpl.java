@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -51,6 +52,20 @@ public class ManagerServiceImpl implements ManagerService {
 	private ModelMapper modelMapper;
 	private BCryptPasswordEncoder passwordEncoder;
 
+	
+	@Override
+	public void validateCredentials(String email, String password) {
+	    Manager manager = managerDao.findByEmail(email)
+	        .orElseThrow(() -> new ResourceNotFoundException("Manager not found"));
+
+	    if (!passwordEncoder.matches(password, manager.getPassword())) {
+	        throw new BadCredentialsException("Invalid password");
+	    }
+	}
+
+	
+//-------------------------------------------------------------------------------------------
+	
 	@Override
 	public ManagerResDTO loginManager(LoginReqDTO dto) {
 		Manager manager = managerDao.findByEmail(dto.getEmail())

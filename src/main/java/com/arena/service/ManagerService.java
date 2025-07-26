@@ -18,6 +18,8 @@ import com.arena.dto.UpdateTurfDTO;
 
 public interface ManagerService {
 
+	void validateCredentials(String email, String password);
+	
 	ManagerResDTO loginManager(LoginReqDTO dto);
 
 	String changePassword(ChangePasswordDTO dto);
