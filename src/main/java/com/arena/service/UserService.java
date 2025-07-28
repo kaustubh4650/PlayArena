@@ -12,10 +12,13 @@ import com.arena.dto.ReviewResDTO;
 import com.arena.dto.UpdateUserDTO;
 import com.arena.dto.UserReqDTO;
 import com.arena.dto.UserResDTO;
+import com.arena.entities.User;
 
 public interface UserService {
 	
 	void validateCredentials(String email, String password);
+	
+	UserResDTO getByEmail(String email);
 
 	UserResDTO addUser(UserReqDTO dto);
 

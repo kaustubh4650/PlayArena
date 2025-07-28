@@ -53,6 +53,16 @@ public class UserServiceImpl implements UserService {
 	private BCryptPasswordEncoder passwordEncoder;
 
 	
+	public UserResDTO getByEmail(String email) {
+		
+		return userDao.findByEmail(email)
+				.map(user -> modelMapper.map(user, UserResDTO.class))
+				.orElseThrow(()-> new ResourceNotFoundException("User not found"));
+
+	}
+	
+//-------------------------------------------------------------------------------------
+	
 	@Override
 	public void validateCredentials(String email, String password) {
 	    User user = userDao.findByEmail(email)
@@ -121,7 +131,7 @@ public class UserServiceImpl implements UserService {
 		
 		return userDao.findById(id)
 				.map(user -> modelMapper.map(user, UserResDTO.class))
-				.orElseThrow(()-> new ApiException("User not found"));
+				.orElseThrow(()-> new ResourceNotFoundException("User not found"));
 	}
 	
 //-------------------------------------------------------------------------------------

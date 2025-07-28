@@ -39,6 +39,16 @@ public class AdminServiceImpl implements AdminService {
 	private ModelMapper modelMapper;
 
 	
+public AdminResDTO getByEmail(String email) {
+		
+		return adminDao.findByEmail(email)
+				.map(admin -> modelMapper.map(admin, AdminResDTO.class))
+				.orElseThrow(()-> new ResourceNotFoundException("Admin not found"));
+
+	}
+	
+//---------------------------------------------------------------------------------------------
+	
 	@Override
 	public void validateCredentials(String email, String password) {
 	    Admin admin = adminDao.findByEmail(email)
@@ -49,7 +59,6 @@ public class AdminServiceImpl implements AdminService {
 	    }
 	}
 
-	
 //---------------------------------------------------------------------------------------------
 	
 	@Override

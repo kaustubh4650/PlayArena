@@ -13,6 +13,8 @@ public interface AdminService {
 
 	void validateCredentials(String email, String password);
 	
+	AdminResDTO getByEmail(String email);
+	
 	AdminResDTO loginAdmin(LoginReqDTO dto);
 
 	List<UserResDTO> getAllUsers();

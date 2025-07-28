@@ -29,6 +29,7 @@ import com.arena.dto.TurfReqDTO;
 import com.arena.dto.TurfResDTO;
 import com.arena.dto.UpdateManagerDTO;
 import com.arena.dto.UpdateTurfDTO;
+import com.arena.dto.UserResDTO;
 import com.arena.entities.Booking;
 import com.arena.entities.Manager;
 import com.arena.entities.Payment;
@@ -53,6 +54,16 @@ public class ManagerServiceImpl implements ManagerService {
 	private BCryptPasswordEncoder passwordEncoder;
 
 	
+public ManagerResDTO getByEmail(String email) {
+		
+		return managerDao.findByEmail(email)
+				.map(manager -> modelMapper.map(manager, ManagerResDTO.class))
+				.orElseThrow(()-> new ResourceNotFoundException("Manager not found"));
+
+	}
+	
+//-------------------------------------------------------------------------------------------
+	
 	@Override
 	public void validateCredentials(String email, String password) {
 	    Manager manager = managerDao.findByEmail(email)
@@ -63,7 +74,6 @@ public class ManagerServiceImpl implements ManagerService {
 	    }
 	}
 
-	
 //-------------------------------------------------------------------------------------------
 	
 	@Override

@@ -15,10 +15,13 @@ import com.arena.dto.TurfReqDTO;
 import com.arena.dto.TurfResDTO;
 import com.arena.dto.UpdateManagerDTO;
 import com.arena.dto.UpdateTurfDTO;
+import com.arena.entities.Manager;
 
 public interface ManagerService {
 
 	void validateCredentials(String email, String password);
+	
+	ManagerResDTO getByEmail(String email);
 	
 	ManagerResDTO loginManager(LoginReqDTO dto);
 
