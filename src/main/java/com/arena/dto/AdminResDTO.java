@@ -10,6 +10,8 @@ import lombok.Setter;
 @Setter
 public class AdminResDTO {
 
+	private Long adminId;
+	
 	private String name;
 	
 	private String email;

@@ -30,29 +30,6 @@ public class AuthController {
     private final ManagerService managerService;
     private final AdminService adminService;
 
-//    @PostMapping("/user/login")
-//    public LoginResDTO userLogin(@RequestBody LoginReqDTO request) {
-//        userService.validateCredentials(request.getEmail(), request.getPassword());
-//        UserResDTO user = userService.getByEmail(request.getEmail());
-//        String token = jwtUtils.generateToken(request.getEmail(), "USER");
-//        return new LoginResDTO(user.getEmail(),user.getName(), "USER", token);
-//    }
-//
-//    @PostMapping("/manager/login")
-//    public LoginResDTO managerLogin(@RequestBody LoginReqDTO request) {
-//        managerService.validateCredentials(request.getEmail(), request.getPassword());
-//        ManagerResDTO manager = managerService.getByEmail(request.getEmail());
-//        String token = jwtUtils.generateToken(request.getEmail(), "MANAGER");
-//        return new LoginResDTO(manager.getEmail(),manager.getName(), "MANAGER", token);
-//    }
-//
-//    @PostMapping("/admin/login")
-//    public LoginResDTO adminLogin(@RequestBody LoginReqDTO request) {
-//        adminService.validateCredentials(request.getEmail(), request.getPassword());
-//        AdminResDTO admin = adminService.getByEmail(request.getEmail());
-//        String token = jwtUtils.generateToken(request.getEmail(), "ADMIN");
-//        return new LoginResDTO(admin.getEmail(),admin.getName(), "ADMIN", token);
-//    }
 
     @PostMapping("/login")
     public LoginResDTO login(@RequestBody LoginReqDTO request) {
@@ -77,8 +54,16 @@ public class AuthController {
             case "ADMIN" -> adminService.getByEmail(request.getEmail()).getName();
             default -> "Unknown";
         };
+        
+        Long id = switch (role) {
+        case "USER" -> userService.getByEmail(request.getEmail()).getUserid();
+        case "MANAGER" -> managerService.getByEmail(request.getEmail()).getManagerId();
+        case "ADMIN" -> adminService.getByEmail(request.getEmail()).getAdminId();
+        default -> null;
+    };
 
-        return new LoginResDTO(request.getEmail(), name, role, token);
+
+        return new LoginResDTO(id,request.getEmail(), name, role, token);
     }
     
 }
