@@ -29,7 +29,6 @@ import com.arena.dto.TurfReqDTO;
 import com.arena.dto.TurfResDTO;
 import com.arena.dto.UpdateManagerDTO;
 import com.arena.dto.UpdateTurfDTO;
-import com.arena.dto.UserResDTO;
 import com.arena.entities.Booking;
 import com.arena.entities.Manager;
 import com.arena.entities.Payment;
@@ -305,8 +304,6 @@ public ManagerResDTO getByEmail(String email) {
 	@Override
 	public List<SlotResDTO> getAllSlotsByTurf(Long turfId) {
 		Turf turf = turfDao.findById(turfId).orElseThrow(() -> new ResourceNotFoundException("Turf not found"));
-
-		List<Slot> slots = slotDao.findByTurf(turf);
 
 		return slotDao.findByTurf(turf).stream().map(slot -> {
 			SlotResDTO dto = modelMapper.map(slot, SlotResDTO.class);
