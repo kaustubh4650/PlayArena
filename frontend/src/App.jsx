@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 // import Register from "./pages/Register";
+import HomePage from "./pages/HomePage";
+import TurfDetails from "./pages/TurfDetails";
 
 import UserLayout from "./layouts/UserLayout";
 import ManagerLayout from "./layouts/ManagerLayout";
@@ -13,12 +15,18 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import PrivateRoute from "./routes/PrivateRoute";
 
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+
+        <Route path="/" element={<HomePage />} />
+
+        <Route path="/turfs/:turfId" element={<TurfDetails />} />
+
         {/* Public Routes */}
-        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
         {/* <Route path="/register" element={<Register />} /> */}
 
         {/* User Routes */}
