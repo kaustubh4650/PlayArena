@@ -22,7 +22,6 @@ public class BookingReqDTO {
 	@NotNull
 	private BookingStatus status;
 
-	@NotNull(message = "Payment details are required")
 	private PaymentReqDTO payment;
 
 	@NotNull(message = "Booking date is required")

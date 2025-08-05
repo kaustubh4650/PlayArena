@@ -11,5 +11,5 @@ import lombok.Setter;
 public class PaymentReqDTO {
 
 	@NotNull(message = "Payment status is required")
-	private PaymentStatus status;
+	private PaymentStatus status = PaymentStatus.PENDING;
 }

@@ -260,7 +260,7 @@ public class UserServiceImpl implements UserService {
 	    Slot slot = slotDao.findById(dto.getSlotId())
 	            .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
 
-	    if (bookingDao.existsBySlotAndBookingDate(slot, dto.getBookingDate())) {
+	    if (bookingDao.existsBySlotAndBookingDateAndStatusNot(slot, dto.getBookingDate(),BookingStatus.CANCELLED)) {
 	        throw new ApiException("Slot already booked for this date and time");
 	    }
 

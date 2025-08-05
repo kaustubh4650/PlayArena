@@ -47,7 +47,8 @@ public class SecurityConfig {
 							        "/webjars/**",
 							        "/users/register",
 							        "/images/**",
-							        "/turfs/**"
+							        "/turfs/**",
+							        "/payment/**"
 								)
 						.permitAll()
 						.requestMatchers("/users/**").hasRole("USER")
