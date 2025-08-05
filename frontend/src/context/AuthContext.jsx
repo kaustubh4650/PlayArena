@@ -1,22 +1,37 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [token, setToken] = useState(localStorage.getItem("token") || null);
+
+    const getToken = () => localStorage.getItem("token");
+
+    const isTokenExpired = (token) => {
+        try {
+            const [, payloadBase64] = token.split(".");
+            const payload = JSON.parse(atob(payloadBase64));
+            const expiry = payload.exp * 1000;
+            return Date.now() > expiry;
+        } catch (err) {
+            return true;
+        }
+    };
+
+    const initialToken = getToken();
+    const [token, setToken] = useState(initialToken && !isTokenExpired(initialToken) ? initialToken : null);
     const [role, setRole] = useState(localStorage.getItem("role") || null);
     const [name, setName] = useState(localStorage.getItem("name") || null);
     const [id, setId] = useState(localStorage.getItem("id") || null);
 
-    let parsedUser = null;
-    try {
-        parsedUser = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null;
-    } catch (err) {
-        console.error("Error parsing user from localStorage", err);
-        localStorage.removeItem("user");
-    }
+    // let parsedUser = null;
+    // try {
+    //     parsedUser = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null;
+    // } catch (err) {
+    //     console.error("Error parsing user from localStorage", err);
+    //     localStorage.removeItem("user");
+    // }
 
-    const [user, setUser] = useState(parsedUser);
+    // const [user, setUser] = useState(parsedUser);
 
     const login = ({ token, role, name, id }) => {
         setToken(token);
@@ -33,13 +48,19 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         setToken(null);
         setRole(null);
-        setUser(null);
+        // setUser(null);
         setName(null);
         setId(null);
         localStorage.clear();
     };
 
     const isLoggedIn = !!token;
+
+    useEffect(() => {
+        if (initialToken && isTokenExpired(initialToken)) {
+            logout();
+        }
+    }, []);
 
     return (
         <AuthContext.Provider value={{ token, role, name, login, logout, isLoggedIn, id }}>

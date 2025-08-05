@@ -2,6 +2,7 @@
 import axios from "axios";
 
 const BASE_URL = "http://localhost:8080/users";
+export const BASE_PAYMENT_URL = "http://localhost:8080/payment";
 
 // Auth headers with token
 const authHeaders = (token) => ({
@@ -130,5 +131,24 @@ export const getBookingById = async (bookingId, token) => {
     `${BASE_URL}/booking/${bookingId}`,
     authHeaders(token)
   );
+  return res.data;
+};
+
+// -------------------- PAYMENT APIs --------------------
+
+export const createRazorpayOrder = async (bookingPayload, token) => {
+  const res = await axios.post(
+    `${BASE_PAYMENT_URL}/create-order`,
+    bookingPayload,
+    authHeaders(token)
+  );
+  return res.data;
+};
+
+export const validateSlotAvailability = async (slotId, bookingDate, token) => {
+  const res = await axios.get(`${BASE_PAYMENT_URL}/validate-slot`, {
+    params: { slotId, bookingDate },
+    ...authHeaders(token),
+  });
   return res.data;
 };

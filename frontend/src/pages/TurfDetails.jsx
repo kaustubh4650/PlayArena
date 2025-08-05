@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import { createBooking, createRazorpayOrder, validateSlotAvailability } from "../api/userApi";
 import {
     getTurfById,
     getSlotsByTurfId,
@@ -34,20 +36,87 @@ const TurfDetails = () => {
         fetchData();
     }, [turfId]);
 
-    const handleBookNow = () => {
+
+    const handleBookNow = async () => {
         if (!selectedSlot || !selectedDate) {
             alert("Please select a slot and date.");
             return;
         }
 
-        const isLoggedIn = localStorage.getItem("token"); // or your auth logic
+        const token = localStorage.getItem("token");
+        const userId = localStorage.getItem("id");
 
-        if (!isLoggedIn) {
+        if (!token || !userId) {
             navigate("/login");
-        } else {
-            navigate("/user/dashboard"); // Replace with actual dashboard routing
+            return;
+        }
+
+        try {
+
+            const isAvailable = await validateSlotAvailability(selectedSlot.slotId, selectedDate, token);
+            if (!isAvailable) {
+                alert("❌ This slot is already booked for the selected date. Please choose another slot.");
+                return;
+            }
+
+
+            const orderPayload = {
+                slotId: selectedSlot.slotId,
+                userId: Number(userId),
+                bookingDate: selectedDate,
+                status: "CONFIRMED",
+            };
+
+            const { orderId, amount, currency, key } = await createRazorpayOrder(orderPayload, token);
+
+
+            const options = {
+                key,
+                amount,
+                currency,
+                name: "PlayArena Turf Booking",
+                description: "Booking payment",
+                order_id: orderId,
+                handler: async function (response) {
+                    const payment = {
+                        status: "SUCCESS"
+                    };
+
+                    const bookingData = {
+                        slotId: selectedSlot.slotId,
+                        userId: Number(userId),
+                        bookingDate: selectedDate,
+                        status: "CONFIRMED",
+                        payment
+                    };
+
+                    const bookingRes = await createBooking(bookingData, token);
+                    console.log("Booking successful:", bookingRes);
+                    // navigate("/user/dashboard");
+                    navigate("/");
+                },
+                theme: {
+                    color: "#0f9d58",
+                },
+            };
+
+            const rzp = new window.Razorpay(options);
+
+            //  Handle payment failure
+            rzp.on("payment.failed", function (response) {
+                console.error("Payment failed:", response.error);
+                alert("❌ Payment failed. Please try again.");
+
+            });
+
+            rzp.open();
+        } catch (error) {
+            console.error("Razorpay order creation failed", error);
+            alert("Something went wrong. Please try again.");
         }
     };
+
+
 
     if (!turf) return <div className="p-6">Loading...</div>;
 
@@ -82,27 +151,40 @@ const TurfDetails = () => {
 
             <div className="mb-6">
                 <h2 className="text-xl font-semibold mb-2">Available Slots</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {slots.map((slot) => (
-                        <div
-                            key={slot.slotId}
-                            className={`border rounded p-3 cursor-pointer transition ${selectedSlot?.slotId === slot.slotId
-                                ? "bg-blue-500 text-white"
-                                : slot.status === "BOOKED"
-                                    ? "bg-red-200 cursor-not-allowed"
-                                    : "hover:bg-blue-100"
-                                }`}
-                            onClick={() =>
-                                slot.status !== "BOOKED" && setSelectedSlot(slot)
-                            }
-                        >
+
+                <div className="flex flex-col gap-4">
+                    <label className="font-medium text-lg">Select a Slot:</label>
+
+                    <select
+                        value={selectedSlot?.slotId || ""}
+                        onChange={(e) => {
+                            const selected = slots.find(slot => slot.slotId === parseInt(e.target.value));
+                            setSelectedSlot(selected);
+                        }}
+                        className="border rounded px-4 py-2 text-base"
+                    >
+                        <option value="">-- Choose a slot --</option>
+                        {slots.map((slot) => (
+                            <option
+                                key={slot.slotId}
+                                value={slot.slotId}
+                                disabled={slot.status === "BOOKED"}
+                            >
+                                {slot.startTime} - {slot.endTime} ({slot.status})
+                            </option>
+                        ))}
+                    </select>
+
+                    {selectedSlot && (
+                        <div className="p-4 border rounded bg-blue-50">
                             <p className="font-medium">
-                                {slot.startTime} - {slot.endTime}
+                                Selected Slot: {selectedSlot.startTime} - {selectedSlot.endTime}
                             </p>
-                            <p className="text-sm">{slot.status}</p>
+                            <p className="text-sm">Status: {selectedSlot.status}</p>
                         </div>
-                    ))}
+                    )}
                 </div>
+
             </div>
 
             <button

@@ -9,7 +9,8 @@ import {
     changePassword,
     addReview,
     updateReview,
-    deleteReview
+    deleteReview,
+    cancelBooking
 } from "../../api/userApi";
 
 const UserDashboard = () => {
@@ -286,17 +287,63 @@ const UserDashboard = () => {
                                 <th className="px-4 py-2">Slot</th>
                                 <th className="px-4 py-2">Date</th>
                                 <th className="px-4 py-2">Status</th>
+                                <th className="px-4 py-2">Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {bookings.map((b) => (
-                                <tr key={b.bookingId} className="border-t">
-                                    <td className="px-4 py-2">{b.bookingId}</td>
-                                    <td className="px-4 py-2">{b.startTime} - {b.endTime}</td>
-                                    <td className="px-4 py-2">{b.slotDate}</td>
-                                    <td className="px-4 py-2">{b.status}</td>
-                                </tr>
-                            ))}
+                            {bookings.map((b) => {
+
+                                const slotDate = new Date(b.slotDate);
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0); // Reset time to compare just the date
+                                const cancelCutoff = new Date(slotDate);
+                                cancelCutoff.setDate(cancelCutoff.getDate() - 1);
+
+                                const isCancellable = today <= cancelCutoff;
+
+                                return (
+                                    <tr key={b.bookingId} className="border-t">
+                                        <td className="px-4 py-2">{b.bookingId}</td>
+                                        <td className="px-4 py-2">{b.startTime} - {b.endTime}</td>
+                                        <td className="px-4 py-2">{b.slotDate}</td>
+                                        <td className="px-4 py-2">
+                                            <span
+                                                className={`px-2 py-1 rounded-full text-white text-sm font-semibold
+            ${b.status === "CONFIRMED" ? "bg-green-600" : ""}
+            ${b.status === "CANCELLED" ? "bg-red-600" : ""}
+            ${b.status === "BOOKED" ? "bg-blue-600" : ""}
+        `}
+                                            >
+                                                {b.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-2">
+                                            {b.status === "CONFIRMED" && isCancellable ? (
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            await cancelBooking(b.bookingId, token);
+                                                            alert("Booking cancelled successfully!");
+                                                            // Refresh bookings list
+                                                            const updated = await getUserBookings(id, token);
+                                                            setBookings(updated);
+                                                        } catch (err) {
+                                                            alert("Failed to cancel booking.");
+                                                        }
+                                                    }}
+                                                    className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            ) : (
+                                                <span className="text-gray-500 text-sm">
+                                                    {b.status !== "BOOKED" ? "COMPLETED" : "Too late to cancel"}
+                                                </span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
