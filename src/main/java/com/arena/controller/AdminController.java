@@ -1,5 +1,7 @@
 package com.arena.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.arena.dto.BookingResDTO;
 import com.arena.dto.LoginReqDTO;
 import com.arena.dto.ManagerReqDTO;
 import com.arena.service.AdminService;
@@ -71,5 +74,31 @@ public class AdminController {
 		return ResponseEntity.status(HttpStatus.OK)
 				.body(adminService.deleteManager(id));
 	}
-
+	
+	//GET ALL TURFS
+	@GetMapping("/turfs")
+	public ResponseEntity<?> getAllTurfs() {
+	    return ResponseEntity.ok(adminService.getAllTurfs());
+	}
+	
+	//GET REVIEWS BY TURFID
+	@GetMapping("/{turfId}/reviews")
+	public ResponseEntity<?> getReviewsByTurf(@PathVariable Long turfId) {
+	    return ResponseEntity.ok(adminService.getReviewsByTurf(turfId));
+	}
+	
+	//GET BOOKINGS BY TURFID
+	@GetMapping("/bookings/{turfId}")
+	public ResponseEntity<List<BookingResDTO>> getBookingsByTurf(@PathVariable Long turfId) {
+	    List<BookingResDTO> bookings = adminService.getAllBookingsByTurfId(turfId);
+	    return ResponseEntity.ok(bookings);
+	}
+	
+	//GET BOOKING DETAILS BY BOOKING ID
+	@GetMapping("/booking/{bookingId}")
+	public ResponseEntity<BookingResDTO> getBookingById(@PathVariable Long bookingId) {
+	    BookingResDTO res = adminService.getBookingById(bookingId);
+	    return ResponseEntity.ok(res);
+	}
+	
 }
