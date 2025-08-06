@@ -34,11 +34,12 @@ const HomePage = () => {
                         className="w-full h-40 object-cover rounded-xl mb-4"
                     />
                     <h2 className="text-xl font-semibold">{turf.name}</h2>
+                    <p className="text-sm text-gray-500 mt-2">{turf.description}</p>
                     <p className="text-gray-600">{turf.location}</p>
                     <p className="text-green-600 font-medium">
                         ₹{turf.pricePerHour}/hr
                     </p>
-                    <p className="text-sm text-gray-500 mt-2">{turf.description}</p>
+                    <p className="text-gray-600">{turf.category.toLowerCase()}</p>
                 </div>
             ))
             }

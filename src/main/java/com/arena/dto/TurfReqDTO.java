@@ -1,5 +1,7 @@
 package com.arena.dto;
 
+import com.arena.entities.Category;
+
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -15,6 +17,9 @@ public class TurfReqDTO {
 
     @NotBlank(message = "Location is required")
     private String location;
+    
+    @NotNull(message = "Category is required")
+    private Category category;
 
     @NotNull(message = "Price per hour is required")
     @Min(value = 100, message = "Price per hour must be at least ₹100")

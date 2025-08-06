@@ -9,7 +9,7 @@ import com.arena.dto.TurfResDTO;
 public interface TurfService {
 	
 	List<TurfResDTO> getAllTurfs();
-	
+		
 	TurfResDTO getTurfById(Long turfId);
 	
 	List<SlotResDTO> getSlotsByTurf(Long turfId);

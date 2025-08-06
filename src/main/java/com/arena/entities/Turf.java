@@ -51,6 +51,10 @@ public class Turf extends BaseEntity{
 	@Column(length = 255, nullable = false)
 	private String description;
 
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private Category category= Category.SPORT;
+	
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "manager_id", nullable = false)
     private Manager manager;

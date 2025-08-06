@@ -1,5 +1,6 @@
 package com.arena.dto;
 
+import com.arena.entities.Category;
 import com.arena.entities.Status;
 
 import lombok.Getter;
@@ -14,6 +15,8 @@ public class TurfResDTO {
 	private String name;
 
 	private String location;
+	
+	private Category category;
 
 	 private double pricePerHour;
 	

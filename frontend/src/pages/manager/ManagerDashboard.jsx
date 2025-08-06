@@ -105,6 +105,7 @@ const ManagerDashboard = () => {
         formDataToSend.append("location", form.location);
         formDataToSend.append("description", form.description);
         formDataToSend.append("pricePerHour", form.pricePerHour);
+        formDataToSend.append("category", form.category);
         if (form.image) formDataToSend.append("image", form.image);
 
         try {
@@ -267,6 +268,7 @@ const ManagerDashboard = () => {
                                                 location: turf.location,
                                                 description: turf.description,
                                                 pricePerHour: turf.pricePerHour,
+                                                category: turf.category,
                                                 image: null,
                                             });
                                             setEditingTurfId(turf.turfId);
@@ -330,6 +332,27 @@ const ManagerDashboard = () => {
                         onChange={(e) => setForm({ ...form, pricePerHour: e.target.value })}
                         className="w-full border p-2 rounded"
                     />
+                    {/* <input
+                        type="text"
+                        placeholder="category"
+                        value={form.category || ""}
+                        onChange={(e) => setForm({ ...form, category: e.target.value })}
+                        className="w-full border p-2 rounded"
+                    /> */}
+                    <select
+                        value={form.category || ""}
+                        onChange={(e) => setForm({ ...form, category: e.target.value })}
+                        className="w-full border p-2 rounded"
+                        required
+                    >
+                        <option value="">Select Category</option>
+                        <option value="HOCKEY">Hockey</option>
+                        <option value="CRICKET">Cricket</option>
+                        <option value="FOOTBALL">Football</option>
+                        <option value="BASKETBALL">Basketball</option>
+                        <option value="BADMINTON">Badminton</option>
+                    </select>
+
                     <input
                         type="file"
                         accept="image/*"
@@ -597,6 +620,7 @@ const ManagerDashboard = () => {
                             <li><strong>Location:</strong> {selectedTurf.location}</li>
                             <li><strong>Description:</strong> {selectedTurf.description}</li>
                             <li><strong>Price Per Hour:</strong> ₹{selectedTurf.pricePerHour}</li>
+                            <li><strong>Category:</strong> {selectedTurf.category.toLowerCase()}</li>
                             {selectedTurf.imagePath && (
                                 <li>
                                     <strong>Image:</strong>
