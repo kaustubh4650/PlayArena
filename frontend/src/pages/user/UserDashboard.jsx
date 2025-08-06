@@ -10,13 +10,16 @@ import {
     addReview,
     updateReview,
     deleteReview,
-    cancelBooking
+    cancelBooking,
+    getBookingById
 } from "../../api/userApi";
 
 const UserDashboard = () => {
     const { id, token, name } = useAuth();
     const { viewType, setViewType } = useOutletContext();
 
+    const [showModal, setShowModal] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState(null);
     const [user, setUser] = useState(null);
     const [bookings, setBookings] = useState([]);
     const [reviews, setReviews] = useState([]);
@@ -28,7 +31,6 @@ const UserDashboard = () => {
     });
     const [reviewData, setReviewData] = useState({ turfId: "", rating: "", comment: "" });
     const [existingReviewId, setExistingReviewId] = useState(null);
-
 
     useEffect(() => {
         if (viewType === "DASHBOARD") {
@@ -154,6 +156,30 @@ const UserDashboard = () => {
             }
         }
     };
+
+    const handleViewDetails = async (bookingId) => {
+        try {
+            const booking = await getBookingById(bookingId, token);
+            setSelectedBooking(booking);
+            setShowModal(true);
+        } catch (err) {
+            alert("Failed to load booking details.");
+        }
+    };
+
+    const handleCancelBooking = async (bookingId) => {
+        try {
+            await cancelBooking(bookingId, token);
+            alert("Booking cancelled successfully!");
+            // Refresh bookings list
+            const updated = await getUserBookings(id, token);
+            setBookings(updated);
+        } catch (err) {
+            alert("Failed to cancel booking.");
+        }
+    };
+
+
 
     const uniqueTurfs = Array.from(
         new Map(
@@ -286,6 +312,7 @@ const UserDashboard = () => {
                                 <th className="px-4 py-2">Booking ID</th>
                                 <th className="px-4 py-2">Slot</th>
                                 <th className="px-4 py-2">Date</th>
+                                <th className="px-4 py-2">Amount</th>
                                 <th className="px-4 py-2">Status</th>
                                 <th className="px-4 py-2">Action</th>
                             </tr>
@@ -295,7 +322,7 @@ const UserDashboard = () => {
 
                                 const slotDate = new Date(b.slotDate);
                                 const today = new Date();
-                                today.setHours(0, 0, 0, 0); // Reset time to compare just the date
+                                today.setHours(0, 0, 0, 0);
                                 const cancelCutoff = new Date(slotDate);
                                 cancelCutoff.setDate(cancelCutoff.getDate() - 1);
 
@@ -306,6 +333,7 @@ const UserDashboard = () => {
                                         <td className="px-4 py-2">{b.bookingId}</td>
                                         <td className="px-4 py-2">{b.startTime} - {b.endTime}</td>
                                         <td className="px-4 py-2">{b.slotDate}</td>
+                                        <td className="px-4 py-2">₹{b.amount}</td>
                                         <td className="px-4 py-2">
                                             <span
                                                 className={`px-2 py-1 rounded-full text-white text-sm font-semibold
@@ -317,27 +345,25 @@ const UserDashboard = () => {
                                                 {b.status}
                                             </span>
                                         </td>
+                                        <td className="px-4 py-2"><button
+                                            onClick={() => handleViewDetails(b.bookingId)}
+                                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-700 ml-2"
+                                        >
+                                            View
+                                        </button>
+                                        </td>
                                         <td className="px-4 py-2">
                                             {b.status === "CONFIRMED" && isCancellable ? (
                                                 <button
-                                                    onClick={async () => {
-                                                        try {
-                                                            await cancelBooking(b.bookingId, token);
-                                                            alert("Booking cancelled successfully!");
-                                                            // Refresh bookings list
-                                                            const updated = await getUserBookings(id, token);
-                                                            setBookings(updated);
-                                                        } catch (err) {
-                                                            alert("Failed to cancel booking.");
-                                                        }
-                                                    }}
+                                                    onClick={() => handleCancelBooking(b.bookingId)}
                                                     className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
                                                 >
                                                     Cancel
                                                 </button>
+
                                             ) : (
                                                 <span className="text-gray-500 text-sm">
-                                                    {b.status !== "BOOKED" ? "COMPLETED" : "Too late to cancel"}
+                                                    {b.status === "CONFIRMED" ? "Completed" : "Cancelled"}
                                                 </span>
                                             )}
                                         </td>
@@ -440,6 +466,35 @@ const UserDashboard = () => {
                     </form>
                 </div>
             )}
+
+
+            {showModal && selectedBooking && (
+                <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
+                        <h2 className="text-lg font-semibold mb-4">Booking Details</h2>
+                        <ul className="text-sm space-y-2">
+                            <li><strong>Booking ID:</strong> {selectedBooking.bookingId}</li>
+                            <li><strong>Turf:</strong> {selectedBooking.turfName}</li>
+                            <li><strong>Slot:</strong> {selectedBooking.startTime} - {selectedBooking.endTime}</li>
+                            <li><strong>Date:</strong> {selectedBooking.slotDate}</li>
+                            <li><strong>Status:</strong> {selectedBooking.status}</li>
+                            <li><strong>Booked On:</strong> {new Date(selectedBooking.bookedOn).toLocaleString()}</li>
+                            <li><strong>Amount:</strong> ₹{selectedBooking.amount}</li>
+                            <li><strong>Payment Status:</strong> {selectedBooking.paymentStatus}</li>
+                            <li><strong>Payment Date:</strong> {new Date(selectedBooking.paymentDate).toLocaleString()}</li>
+                        </ul>
+                        <div className="mt-4 text-right">
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };

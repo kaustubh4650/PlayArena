@@ -1,374 +1,627 @@
-import React, { useEffect, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { useOutletContext } from "react-router-dom";
+import { useEffect, useState } from "react";
 import {
     getManagerById,
-    getTurfById,
-    updateTurf,
-    createTurf,
+    updateManagerById,
+    changePassword,
     getTurfsByManager,
     deleteTurf,
-    getBookingsByTurfId,
-    createSlot,
+    createTurf,
     getSlotsByTurfId,
-    getSlotById,
-    updateSlot,
     deleteSlot,
+    createSlot,
+    getBookingsByTurfId,
+    updateSlot,
+    updateTurf,
+    getTurfById
 } from "../../api/managerApi";
 
-const ManagerDashboard = () => {
-    const [view, setView] = useState("TURFS");
-    const [manager, setManager] = useState(null);
-    const [turfs, setTurfs] = useState([]);
-    const [bookings, setBookings] = useState([]);
-    const [slots, setSlots] = useState([]);
-    const [selectedId, setSelectedId] = useState(null);
-    const [form, setForm] = useState({});
-    const [showForm, setShowForm] = useState(false);
-    const [formType, setFormType] = useState(null);
-    const [viewedTurf, setViewedTurf] = useState(null);
-    const [showUpdateForm, setShowUpdateForm] = useState(false);
-    const [formData, setFormData] = useState({ name: "", address: "", phone: "" });
-    const [showChangePasswordForm, setShowChangePasswordForm] = useState(false);
-    const [passwordForm, setPasswordForm] = useState({ email: "", oldPassword: "", newPassword: "" });
+import { getReviewsByTurfId } from "../../api/turfApi";
 
-    const token = localStorage.getItem("token");
-    const managerId = localStorage.getItem("id");
-    const managerName = localStorage.getItem("name");
+const ManagerDashboard = () => {
+    const { token, id } = useAuth();
+    const { viewType, setViewType } = useOutletContext();
+
+    const [manager, setManager] = useState({});
+    const [formData, setFormData] = useState({});
+    const [passwordData, setPasswordData] = useState({
+        email: "",
+        oldPassword: "",
+        newPassword: "",
+    });
+
+    const [turfs, setTurfs] = useState([]);
+    const [slots, setSlots] = useState([]);
+    const [bookings, setBookings] = useState([]);
+    const [form, setForm] = useState({});
+    const [editingSlotId, setEditingSlotId] = useState(null);
+    const [editingTurfId, setEditingTurfId] = useState(null);
+    const [selectedTurf, setSelectedTurf] = useState(null);
+    const [reviews, setReviews] = useState([]);
+    const [showTurfModal, setShowTurfModal] = useState(false);
+
+
+
+    // Fetch manager and turfs on load
+    useEffect(() => {
+        if (id && token) {
+            getManagerById(id, token).then(data => {
+                setManager(data);
+                setFormData(data); // for update
+                setPasswordData(prev => ({ ...prev, email: data.email }));
+            });
+            getTurfsByManager(id, token).then(setTurfs);
+        }
+    }, [id, token]);
 
     useEffect(() => {
-        fetchManager();
-        fetchTurfs();
-    }, []);
+        const fetchBookings = async () => {
+            if (viewType === "VIEW_BOOKINGS" && formData.turfId) {
+                const data = await getBookingsByTurfId(formData.turfId, token);
+                setBookings(data);
+            }
+        };
+        fetchBookings();
+    }, [viewType, formData.turfId, token]);
 
-    const fetchManager = async () => {
-        const res = await getManagerById(managerId, token);
-        setManager(res);
-    };
+    useEffect(() => {
+        const fetchSlots = async () => {
+            if (formData.turfId) {
+                const data = await getSlotsByTurfId(formData.turfId, token);
+                setSlots(data); // Replaces the old list
+            } else {
+                setSlots([]);
+            }
+        };
 
-    const fetchTurfs = async () => {
-        const res = await getTurfsByManager(managerId, token);
-        setTurfs(res);
-    };
+        fetchSlots();
+    }, [formData.turfId, token]);
 
-    const fetchTurfDetails = async (turfId) => {
-        if (viewedTurf && viewedTurf.turfId === turfId) {
-            setViewedTurf(null);
-        } else {
-            const res = await getTurfById(turfId, token);
-            setViewedTurf(res);
-        }
-    };
 
-    const fetchBookings = async (turfId) => {
-        const res = await getBookingsByTurfId(turfId, token);
-        setBookings(res);
-        setView("BOOKINGS");
-    };
 
-    const fetchSlots = async (turfId) => {
-        const res = await getSlotsByTurfId(turfId, token);
-        setSlots(res);
-        setSelectedId(turfId);
-        setView("SLOTS");
-    };
-
-    const handleDeleteTurf = async (id) => {
-        await deleteTurf(id, token);
-        fetchTurfs();
-    };
-
-    const handleDeleteSlot = async (id) => {
-        await deleteSlot(id, token);
-        fetchSlots(selectedId);
-    };
-
-    const handleEditTurf = async (id) => {
-        setSelectedId(id);
-        const res = await getTurfById(id, token);
-        setForm(res);
-        setFormType("TURF");
-        setShowForm(true);
-    };
-
-    const handleEditSlot = async (id) => {
-        const res = await getSlotById(id, token);
-        setForm(res);
-        setFormType("SLOT");
-        setShowForm(true);
-    };
-
-    const handleTurfSubmit = async () => {
-        const formData = new FormData();
-        formData.append("name", form.name);
-        formData.append("location", form.location);
-        formData.append("description", form.description);
-        formData.append("pricePerHour", form.pricePerHour);
-        if (form.image) formData.append("image", form.image);
-
-        if (form.turfId) {
-            await updateTurf(form.turfId, formData, token);
-        } else {
-            await createTurf(managerId, formData, token);
-        }
-        fetchTurfs();
-    };
-
-    const handleSlotSubmit = async () => {
-        if (form.slotId) {
-            await updateSlot(form.slotId, form, token);
-        } else {
-            const turfId = form.turfId || selectedId;
-            if (!turfId) return alert("No turf selected");
-            await createSlot(turfId, form, token);
-        }
-        fetchSlots(form.turfId || selectedId);
-    };
-
-    const handleFormSubmit = async (e) => {
+    const handleUpdateProfile = async (e) => {
         e.preventDefault();
-        formType === "TURF" ? await handleTurfSubmit() : await handleSlotSubmit();
-        setShowForm(false);
-        setForm({});
-        setFormType(null);
+        await updateManagerById(id, formData, token);
+        alert("Profile updated successfully!");
     };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handlePasswordChange = (e) => {
-        const { name, value } = e.target;
-        setPasswordForm((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleUpdateSubmit = async (e) => {
+    const handleChangePassword = async (e) => {
         e.preventDefault();
         try {
-            await updateManagerById(id, formData, token);
-            alert("Manager updated successfully!");
-            setShowUpdateForm(false);
-        } catch {
-            alert("Failed to update manager.");
+            await changePassword(passwordData, token);
+            alert("Password changed successfully!");
+        } catch (error) {
+            alert("Failed to change password. Please try again.");
         }
     };
 
-    const handleChangePasswordSubmit = async (e) => {
+
+    const handleSubmitTurf = async (e) => {
+        e.preventDefault();
+
+        const formDataToSend = new FormData();
+        formDataToSend.append("name", form.name);
+        formDataToSend.append("location", form.location);
+        formDataToSend.append("description", form.description);
+        formDataToSend.append("pricePerHour", form.pricePerHour);
+        if (form.image) formDataToSend.append("image", form.image);
+
+        try {
+            if (editingTurfId) {
+                await updateTurf(editingTurfId, formDataToSend, token);
+                alert("Turf updated successfully!");
+            } else {
+                await createTurf(id, formDataToSend, token);
+                alert("Turf created successfully!");
+            }
+
+            // Reset state
+            setForm({});
+            setEditingTurfId(null);
+            const updatedTurfs = await getTurfsByManager(id, token);
+            setTurfs(updatedTurfs);
+            setViewType("VIEW_TURFS");
+        } catch (err) {
+            alert("Failed to submit turf");
+        }
+    };
+
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await changePassword(passwordForm, token);
-            alert("Password updated successfully!");
-            setShowChangePasswordForm(false);
-            setPasswordForm({ email: "", oldPassword: "", newPassword: "" });
-        } catch {
-            alert("Failed to update password.");
+            if (editingSlotId) {
+                const updated = await updateSlot(editingSlotId, {
+                    startTime: formData.startTime,
+                    endTime: formData.endTime,
+                }, token);
+                setSlots((prev) =>
+                    prev.map((s) => (s.slotId === editingSlotId ? updated : s))
+                );
+                alert("Slot updated successfully!");
+            } else {
+                const { turfId, startTime, endTime, price } = formData;
+                const newSlot = await createSlot(turfId, { startTime, endTime, price }, token);
+                setSlots((prev) => [...prev, newSlot]);
+                alert("Slot added successfully!");
+            }
+
+            // Reset
+            setFormData({});
+            setEditingSlotId(null);
+            setViewType("VIEW_SLOTS");
+        } catch (err) {
+            alert("Failed to save slot.");
+        }
+    };
+
+    const fetchReviews = async (turfId) => {
+        try {
+            const data = await getReviewsByTurfId(turfId);
+            setReviews(data);
+        } catch (err) {
+            alert("Failed to fetch reviews.");
+            console.error(err);
         }
     };
 
 
-    const renderTable = () => {
-        const tableClass = "w-full border border-gray-300 text-sm";
-        const thClass = "bg-gray-200 p-2 border";
-        const tdClass = "p-2 border text-center";
-        const actionBtn = "text-blue-600 hover:underline mx-1";
-
-        if (view === "TURFS")
-            return (
-                <table className={tableClass}>
-                    <thead>
-                        <tr>
-                            <th className={thClass}>Name</th>
-                            <th className={thClass}>Location</th>
-                            <th className={thClass}>Price</th>
-                            <th className={thClass}>Description</th>
-                            <th className={thClass}>Status</th>
-                            <th className={thClass}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {turfs.map((t) => (
-                            <tr key={t.turfId} className="hover:bg-gray-100">
-                                <td className={tdClass}>{t.name}</td>
-                                <td className={tdClass}>{t.location}</td>
-                                <td className={tdClass}>{t.pricePerHour}</td>
-                                <td className={tdClass}>{t.description}</td>
-                                <td className={tdClass}>{t.status}</td>
-                                <td className={tdClass}>
-                                    <button onClick={() => fetchBookings(t.turfId)} className={actionBtn}>Bookings</button>
-                                    <button onClick={() => fetchSlots(t.turfId)} className={actionBtn}>Slots</button>
-                                    <button onClick={() => fetchTurfDetails(t.turfId)} className={actionBtn}>View</button>
-                                    <button onClick={() => handleEditTurf(t.turfId)} className={actionBtn}>Edit</button>
-                                    <button onClick={() => handleDeleteTurf(t.turfId)} className="text-red-600 hover:underline mx-1">Delete</button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            );
-
-        if (view === "BOOKINGS")
-            return (
-                <table className={tableClass}>
-                    <thead>
-                        <tr>
-                            <th className={thClass}>User ID</th>
-                            <th className={thClass}>User Name</th>
-                            <th className={thClass}>Slot Date</th>
-                            <th className={thClass}>Start</th>
-                            <th className={thClass}>End</th>
-                            <th className={thClass}>Turf Name</th>
-                            <th className={thClass}>Price</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {bookings.map((b) => (
-                            <tr key={b.bookingId} className="hover:bg-gray-100">
-                                <td className={tdClass}>{b.userId}</td>
-                                <td className={tdClass}>{b.userName}</td>
-                                <td className={tdClass}>{b.slotDate}</td>
-                                <td className={tdClass}>{b.startTime}</td>
-                                <td className={tdClass}>{b.endTime}</td>
-                                <td className={tdClass}>{b.turfName}</td>
-                                <td className={tdClass}>{b.pricePerHour}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            );
-        if (view === "SLOTS")
-            return (
-                <table className={tableClass}>
-                    <thead>
-                        <tr>
-                            <th className={thClass}>Slot ID</th>
-                            <th className={thClass}>Turf Name</th>
-                            <th className={thClass}>Start</th>
-                            <th className={thClass}>End</th>
-                            <th className={thClass}>Status</th>
-                            <th className={thClass}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {slots.map((s) => (
-                            <tr key={s.slotId} className="hover:bg-gray-100">
-                                <td className={tdClass}>{s.slotId}</td>
-                                <td className={tdClass}>{s.turfName}</td>
-                                <td className={tdClass}>{s.startTime}</td>
-                                <td className={tdClass}>{s.endTime}</td>
-                                <td className={tdClass}>{s.status}</td>
-                                <td className={tdClass}>
-                                    <button onClick={() => handleEditSlot(s.slotId)} className={actionBtn}>Edit</button>
-                                    <button onClick={() => handleDeleteSlot(s.slotId)} className="text-red-600 hover:underline mx-1">Delete</button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            );
-    };
     return (
-        <div className="flex h-screen">
-            <aside className="w-1/4 bg-gray-100 p-4 border-r">
-                <h2 className="text-xl font-bold mb-6">Welcome, {managerName}</h2>
-                <nav className="space-y-3">
-                    <button onClick={() => setView("TURFS")} className="block w-full text-left text-blue-700 hover:underline">View Turfs</button>
-                    <button onClick={() => setView("BOOKINGS")} className="block w-full text-left text-blue-700 hover:underline">View Bookings</button>
-                    <button onClick={() => setView("SLOTS")} className="block w-full text-left text-blue-700 hover:underline">View Slots</button>
-                    <button onClick={() => { setShowForm(true); setFormType("TURF"); setForm({}); }} className="block w-full text-left text-green-700 hover:underline">Add Turf</button>
-                    <button onClick={() => { setShowForm(true); setFormType("SLOT"); setForm({ turfId: selectedId || null }); }} className="block w-full text-left text-green-700 hover:underline">Add Slot</button>
-                    <button onClick={() => setShowUpdateForm(!showUpdateForm)} className="text-blue-600 hover:underline text-left">
-                        {showUpdateForm ? "Cancel Update" : "Update Manager"}
-                    </button>
-                    <button onClick={() => setShowChangePasswordForm(!showChangePasswordForm)} className="text-blue-600 hover:underline text-left">
-                        {showChangePasswordForm ? "Cancel Password Change" : "Change Password"}
-                    </button>
-                </nav>
-            </aside>
-
-            <main className="w-3/4 p-6 overflow-y-auto">
-                {renderTable()}
-
-                {showForm && (
-                    <form onSubmit={handleFormSubmit} className="mt-6 space-y-4">
-                        {formType === "TURF" && (
-                            <>
-                                <input type="text" placeholder="Name" value={form.name || ""} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="w-full border p-2 rounded" />
-                                <input type="text" placeholder="Location" value={form.location || ""} onChange={(e) => setForm({ ...form, location: e.target.value })} required className="w-full border p-2 rounded" />
-                                <input type="text" placeholder="Description" value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full border p-2 rounded" />
-                                <input type="number" placeholder="Price Per Hour" value={form.pricePerHour || ""} onChange={(e) => setForm({ ...form, pricePerHour: e.target.value })} className="w-full border p-2 rounded" />
-                                <input type="file" accept="image/*" onChange={(e) => setForm({ ...form, image: e.target.files[0] })} className="w-full border p-2 rounded" />
-                            </>
-                        )}
-                        {formType === "SLOT" && (
-                            <>
-                                <input type="time" value={form.startTime || ""} onChange={(e) => setForm({ ...form, startTime: e.target.value })} required className="w-full border p-2 rounded" />
-                                <input type="time" value={form.endTime || ""} onChange={(e) => setForm({ ...form, endTime: e.target.value })} required className="w-full border p-2 rounded" />
-                            </>
-                        )}
-                        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Submit</button>
-                    </form>
-                )}
-
-                {viewedTurf && (
-                    <div className="mt-6 p-4 border border-gray-300 rounded bg-gray-50">
-                        <h3 className="text-lg font-bold mb-2">Turf Details</h3>
-                        <p><strong>ID:</strong> {viewedTurf.turfId}</p>
-                        <p><strong>Name:</strong> {viewedTurf.name}</p>
-                        <p><strong>Location:</strong> {viewedTurf.location}</p>
-                        <p><strong>Price/Hour:</strong> ₹{viewedTurf.pricePerHour}</p>
-                        <p><strong>Description:</strong> {viewedTurf.description}</p>
-                        <p><strong>Status:</strong> {viewedTurf.status}</p>
-                        <p><strong>Manager ID:</strong> {viewedTurf.managerId}</p>
-                        <p><strong>Manager Name:</strong> {viewedTurf.managerName}</p>
-                        {viewedTurf.imagePath && (
-                            <img src={`http://localhost:8080/${viewedTurf.imagePath}`} alt="Turf" height={200} width={200} className="mt-2 w-64 rounded" />
-                        )}
+        <div className="space-y-6">
+            {viewType === "DASHBOARD" && (
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                    <h2 className="text-2xl font-bold mb-4">Welcome, {manager.name} 👋</h2>
+                    <div className="space-y-2 text-gray-700">
+                        <p><span className="font-semibold">Email:</span> {manager.email}</p>
+                        <p><span className="font-semibold">Phone:</span> {manager.phone}</p>
+                        <p><span className="font-semibold">Address:</span> {manager.address}</p>
                     </div>
-                )}
+                </div>
 
-                {showUpdateForm && (
-                    <form onSubmit={handleUpdateSubmit} className="mt-4 space-y-3">
-                        {["name", "address", "phone"].map((field) => (
-                            <input
-                                key={field}
-                                type="text"
-                                name={field}
-                                placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-                                value={formData[field]}
-                                onChange={handleChange}
-                                required
-                                className="w-full border px-3 py-2 rounded"
-                            />
+            )}
+
+            {viewType === "UPDATE_PROFILE" && (
+                <form onSubmit={handleUpdateProfile} className="space-y-4">
+                    <h2 className="text-lg font-bold">Update Profile</h2>
+                    <input
+                        className="border p-2 w-full"
+                        value={formData.name || ""}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="Name"
+                        required
+                    />
+                    <input
+                        className="border p-2 w-full"
+                        value={formData.phone || ""}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="Phone"
+                        required
+                    />
+                    <input
+                        className="border p-2 w-full"
+                        value={formData.address || ""}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        placeholder="Address"
+                        required
+                    />
+                    <button className="bg-blue-500 text-white px-4 py-2 rounded">Update</button>
+                </form>
+            )}
+
+            {viewType === "CHANGE_PASSWORD" && (
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                    <h2 className="text-lg font-bold">Change Password</h2>
+                    <input
+                        className="border p-2 w-full"
+                        type="password"
+                        placeholder="Old Password"
+                        onChange={(e) =>
+                            setPasswordData({ ...passwordData, oldPassword: e.target.value })
+                        }
+                        required
+                    />
+                    <input
+                        className="border p-2 w-full"
+                        type="password"
+                        placeholder="New Password"
+                        onChange={(e) =>
+                            setPasswordData({ ...passwordData, newPassword: e.target.value })
+                        }
+                        required
+                    />
+                    <button className="bg-yellow-600 text-white px-4 py-2 rounded">Change</button>
+                </form>
+            )}
+
+            {viewType === "VIEW_TURFS" && (
+                <div>
+                    <h2 className="text-lg font-bold mb-2">Turfs</h2>
+                    <ul className="space-y-2">
+                        {turfs.map((turf) => (
+                            <li
+                                key={turf.turfId}
+                                className="border p-4 rounded bg-gray-100 flex justify-between"
+                            >
+                                <span>
+                                    <b>{turf.name}</b> - {turf.location}
+                                </span>
+                                <div className="space-x-2">
+                                    <button
+                                        className="bg-blue-500 text-white px-2 py-1 rounded"
+                                        onClick={async () => {
+                                            const details = await getTurfById(turf.turfId, token);
+                                            setSelectedTurf(details);
+                                            setShowTurfModal(true);
+
+                                        }}
+                                    >
+                                        View
+                                    </button>
+
+                                    <button
+                                        className="bg-yellow-600 text-white px-2 py-1 rounded"
+                                        onClick={() => {
+                                            setForm({
+                                                name: turf.name,
+                                                location: turf.location,
+                                                description: turf.description,
+                                                pricePerHour: turf.pricePerHour,
+                                                image: null,
+                                            });
+                                            setEditingTurfId(turf.turfId);
+                                            setViewType("ADD_TURFS");
+                                        }}
+                                    >
+                                        Update
+                                    </button>
+                                    <button
+                                        className="bg-red-500 text-white px-2 py-1 rounded"
+                                        onClick={async () => {
+                                            await deleteTurf(turf.turfId, token);
+                                            getTurfsByManager(id, token).then(setTurfs);
+                                        }}
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </li>
                         ))}
-                        <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded w-full hover:bg-green-700">
-                            Submit
-                        </button>
-                    </form>
-                )}
+                    </ul>
+                </div>
+            )}
 
-                {showChangePasswordForm && (
-                    <form onSubmit={handleChangePasswordSubmit} className="mt-4 space-y-3">
-                        {["email", "oldPassword", "newPassword"].map((field) => (
-                            <input
-                                key={field}
-                                type={field.includes("Password") ? "password" : "email"}
-                                name={field}
-                                placeholder={field.replace(/([A-Z])/g, " $1")}
-                                value={passwordForm[field]}
-                                onChange={handlePasswordChange}
-                                required
-                                className="w-full border px-3 py-2 rounded"
-                            />
+            {viewType === "ADD_TURFS" && (
+                <form
+                    onSubmit={handleSubmitTurf}
+                    className="max-w-md bg-white p-4 shadow rounded space-y-4"
+                    encType="multipart/form-data"
+                >
+                    <h2 className="text-lg font-bold">
+                        {editingTurfId ? "Update Turf" : "Add Turf"}
+                    </h2>
+                    <input
+                        type="text"
+                        placeholder="Name"
+                        value={form.name || ""}
+                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        required
+                        className="w-full border p-2 rounded"
+                    />
+                    <input
+                        type="text"
+                        placeholder="Location"
+                        value={form.location || ""}
+                        onChange={(e) => setForm({ ...form, location: e.target.value })}
+                        required
+                        className="w-full border p-2 rounded"
+                    />
+                    <input
+                        type="text"
+                        placeholder="Description"
+                        value={form.description || ""}
+                        onChange={(e) => setForm({ ...form, description: e.target.value })}
+                        className="w-full border p-2 rounded"
+                    />
+                    <input
+                        type="number"
+                        placeholder="Price Per Hour"
+                        value={form.pricePerHour || ""}
+                        onChange={(e) => setForm({ ...form, pricePerHour: e.target.value })}
+                        className="w-full border p-2 rounded"
+                    />
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setForm({ ...form, image: e.target.files[0] })}
+                        className="w-full border p-2 rounded"
+                    />
+                    <button type="submit" className="bg-lime-600 text-white px-4 py-2 rounded">
+                        {editingTurfId ? "Update Turf" : "Add Turf"}
+                    </button>
+                </form>
+            )}
+
+            {viewType === "VIEW_SLOTS" && (
+                <div className="space-y-4">
+                    <h2 className="text-lg font-bold mb-2">Slots</h2>
+
+                    <select
+                        className="border p-2 w-full"
+                        onChange={(e) => setFormData({ ...formData, turfId: e.target.value })}
+                        value={formData.turfId || ""}
+                    >
+                        <option value="">Select Turf</option>
+                        {turfs.map((turf) => (
+                            <option key={turf.turfId} value={turf.turfId}>
+                                {turf.name}
+                            </option>
                         ))}
-                        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded w-full hover:bg-blue-700">
-                            Submit
-                        </button>
-                    </form>
-                )}
+                    </select>
 
-            </main>
+                    {formData.turfId && (
+                        <table className="w-full border mt-4 bg-white">
+                            <thead>
+                                <tr className="bg-gray-200">
+                                    <th className="border px-4 py-2">Start Time</th>
+                                    <th className="border px-4 py-2">End Time</th>
+                                    <th className="border px-4 py-2">Status</th>
+                                    <th className="border px-4 py-2">Turf</th>
+                                    <th className="border px-4 py-2">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {slots
+                                    .filter((s) => s.turfId === Number(formData.turfId))
+                                    .map((slot) => (
+                                        <tr key={slot.slotId}>
+                                            <td className="border px-4 py-2">{slot.startTime}</td>
+                                            <td className="border px-4 py-2">{slot.endTime}</td>
+                                            <td className="border px-4 py-2">{slot.status}</td>
+                                            <td className="border px-4 py-2">{slot.turfName}</td>
+                                            <td className="border px-4 py-2">
+                                                <div className="space-x-2">
+                                                    <button
+                                                        className="bg-yellow-600 text-white px-2 py-1 rounded"
+                                                        onClick={() => {
+                                                            setEditingSlotId(slot.slotId);
+                                                            setFormData({
+                                                                turfId: slot.turfId,
+                                                                startTime: slot.startTime,
+                                                                endTime: slot.endTime,
+                                                            });
+                                                            setViewType("ADD_SLOTS");
+                                                        }}
+                                                    >
+                                                        Update
+                                                    </button>
+
+                                                    <button
+                                                        className="bg-red-500 text-white px-2 py-1 rounded"
+                                                        onClick={async () => {
+                                                            await deleteSlot(slot.slotId, token);
+                                                            setSlots((prev) => prev.filter((s) => s.slotId !== slot.slotId));
+                                                        }}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+            )}
+
+
+            {viewType === "ADD_SLOTS" && (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <h2 className="text-lg font-bold">{editingSlotId ? "Update Slot" : "Add Slot"}</h2>
+
+                    <select
+                        className="border p-2 w-full"
+                        value={formData.turfId || ""}
+                        onChange={(e) => setFormData({ ...formData, turfId: e.target.value })}
+                        required
+                    >
+                        <option value="">Select Turf</option>
+                        {turfs.map((turf) => (
+                            <option key={turf.turfId} value={turf.turfId}>
+                                {turf.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    <input
+                        className="border p-2 w-full"
+                        type="time"
+                        placeholder="Start Time"
+                        value={formData.startTime || ""}
+                        onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                        required
+                    />
+
+                    <input
+                        className="border p-2 w-full"
+                        type="time"
+                        placeholder="End Time"
+                        value={formData.endTime || ""}
+                        onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                        required
+                    />
+
+                    <button className="bg-violet-700 text-white px-4 py-2 rounded">
+                        {editingSlotId ? "Update Slot" : "Add Slot"}
+                    </button>
+
+                    {editingSlotId && (
+                        <button
+                            type="button"
+                            className="ml-4 bg-gray-500 text-white px-4 py-2 rounded"
+                            onClick={() => {
+                                setEditingSlotId(null);
+                                setFormData({});
+                            }}
+                        >
+                            Cancel
+                        </button>
+                    )}
+                </form>
+
+            )}
+
+
+            {viewType === "VIEW_BOOKINGS" && (
+                <div>
+                    <h2 className="text-lg font-bold mb-2">Select Turf to View Bookings</h2>
+                    <select
+                        className="border p-2 w-full mb-4"
+                        onChange={(e) =>
+                            setFormData({ ...formData, turfId: e.target.value })
+                        }
+                        required
+                    >
+                        <option value="">Select Turf</option>
+                        {turfs.map((turf) => (
+                            <option key={turf.turfId} value={turf.turfId}>
+                                {turf.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    {bookings.length > 0 ? (
+                        <div className="overflow-x-auto">
+                            <table className="table-auto w-full border-collapse border border-gray-300">
+                                <thead>
+                                    <tr className="bg-gray-200">
+                                        <th className="border p-2">User ID</th>
+                                        <th className="border p-2">User Name</th>
+                                        <th className="border p-2">Slot Date</th>
+                                        <th className="border p-2">Start Time</th>
+                                        <th className="border p-2">End Time</th>
+                                        <th className="border p-2">Turf Name</th>
+                                        <th className="border p-2">Price/Hour</th>
+                                        <th className="border p-2">Amount</th>
+                                        <th className="border p-2">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {bookings.map((b) => (
+                                        <tr key={b.bookingId} className="text-center">
+                                            <td className="border p-2">{b.userId}</td>
+                                            <td className="border p-2">{b.userName}</td>
+                                            <td className="border p-2">{b.slotDate}</td>
+                                            <td className="border p-2">{b.startTime}</td>
+                                            <td className="border p-2">{b.endTime}</td>
+                                            <td className="border p-2">{b.turfName}</td>
+                                            <td className="border p-2">₹{b.pricePerHour}</td>
+                                            <td className="border p-2">₹{b.amount}</td>
+                                            <td className="border p-2">{b.status}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        formData.turfId && (
+                            <p className="text-gray-500 mt-4">No bookings found for this turf.</p>
+                        )
+                    )}
+                </div>
+            )}
+
+
+            {viewType === "VIEW_REVIEWS" && (
+                <div>
+                    <h2 className="text-lg font-bold mb-2">Select Turf to View Reviews</h2>
+
+                    <select
+                        className="border p-2 w-full mb-4"
+                        value={formData.turfId || ""}
+                        onChange={(e) => {
+                            const turfId = e.target.value;
+                            setFormData((prev) => ({ ...prev, turfId }));
+                            fetchReviews(turfId); // call fetch
+                        }}
+                        required
+                    >
+                        <option value="">Select Turf</option>
+                        {turfs.map((turf) => (
+                            <option key={turf.turfId} value={turf.turfId}>
+                                {turf.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    {reviews.length > 0 ? (
+                        <table className="w-full border border-gray-300 text-sm">
+                            <thead className="bg-gray-100">
+                                <tr>
+                                    <th className="border p-2">Review ID</th>
+                                    <th className="border p-2">User</th>
+                                    <th className="border p-2">Rating</th>
+                                    <th className="border p-2">Comment</th>
+                                    <th className="border p-2">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {reviews.map((review) => (
+                                    <tr key={review.reviewId}>
+                                        <td className="border p-2">{review.reviewId}</td>
+                                        <td className="border p-2">{review.userName}</td>
+                                        <td className="border p-2">{review.rating}</td>
+                                        <td className="border p-2">{review.comment}</td>
+                                        <td className="border p-2">
+                                            {review.reviewedOn.slice(0, 10)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        formData.turfId && <p className="text-sm text-gray-500">No reviews available for this turf.</p>
+                    )}
+                </div>
+            )}
+
+
+            {showTurfModal && selectedTurf && (
+                <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
+                        <h2 className="text-lg font-semibold mb-4">Turf Details</h2>
+                        <ul className="text-sm space-y-2">
+                            <li><strong>Name:</strong> {selectedTurf.name}</li>
+                            <li><strong>Location:</strong> {selectedTurf.location}</li>
+                            <li><strong>Description:</strong> {selectedTurf.description}</li>
+                            <li><strong>Price Per Hour:</strong> ₹{selectedTurf.pricePerHour}</li>
+                            {selectedTurf.imagePath && (
+                                <li>
+                                    <strong>Image:</strong>
+                                    <img
+                                        src={`http://localhost:8080/${selectedTurf.imagePath}`}
+                                        alt="Turf"
+                                        className="mt-2 w-full max-h-48 object-cover rounded"
+                                    />
+                                </li>
+                            )}
+                        </ul>
+                        <div className="mt-4 text-right">
+                            <button
+                                onClick={() => setShowTurfModal(false)}
+                                className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };
 
 export default ManagerDashboard;
-

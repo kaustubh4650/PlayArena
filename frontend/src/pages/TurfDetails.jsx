@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useNavigate } from "react-router-dom";
+import Avatar from "react-avatar";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { createBooking, createRazorpayOrder, validateSlotAvailability } from "../api/userApi";
 import {
     getTurfById,
@@ -11,6 +12,8 @@ import {
 const TurfDetails = () => {
     const { turfId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
+
 
     const [turf, setTurf] = useState(null);
     const [slots, setSlots] = useState([]);
@@ -47,7 +50,9 @@ const TurfDetails = () => {
         const userId = localStorage.getItem("id");
 
         if (!token || !userId) {
-            navigate("/login");
+            navigate("/login", {
+                state: { from: location },
+            });
             return;
         }
 
@@ -202,22 +207,24 @@ const TurfDetails = () => {
                     reviews.map((review) => (
                         <div
                             key={review.reviewId}
-                            className="border rounded-2xl shadow-md p-4 mb-4 bg-white flex flex-col sm:flex-row justify-between items-start sm:items-center transition hover:shadow-lg"
+                            className="border rounded-2xl shadow-md p-4 mb-4 bg-white flex justify-between items-start sm:items-center transition hover:shadow-lg"
                         >
-                            <div className="mb-2 sm:mb-0">
-                                <p className="text-lg font-semibold text-gray-800">{review.userName}</p>
-                                <p className="text-base text-gray-600 mt-1">{review.comment}</p>
-                                <p className="text-sm text-gray-400 mt-1">
-                                    Reviewed on: {review.reviewedOn.slice(0, 10)}
-                                </p>
+
+                            <div className="flex gap-4 items-start max-w-[80%]">
+                                <Avatar name={review.userName} size="48" round="50%" />
+                                <div>
+                                    <p className="text-lg font-semibold text-gray-800">{review.userName}</p>
+                                    <p className="text-base text-gray-600 mt-1 break-words">{review.comment}</p>
+                                    <p className="text-sm text-gray-400 mt-1">
+                                        Reviewed on: {review.reviewedOn.slice(0, 10)}
+                                    </p>
+                                </div>
                             </div>
 
-                            <div className="text-yellow-500 text-xl font-bold sm:ml-4">
+                            <div className="text-yellow-500 text-xl font-bold ml-4 whitespace-nowrap self-start">
                                 ⭐ {review.rating}
                             </div>
-
                         </div>
-
                     ))
                 )}
             </div>

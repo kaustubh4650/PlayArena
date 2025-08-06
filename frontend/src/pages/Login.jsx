@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 
 const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const { login } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const from = location.state?.from?.pathname || "/";
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -23,38 +26,55 @@ const Login = () => {
             login({ token, role, name, id });
 
             // Navigate based on role
-            if (role === "USER") navigate("/user/dashboard");
+            if (role === "USER") navigate(from, { replace: true });
             else if (role === "MANAGER") navigate("/manager/dashboard");
             else if (role === "ADMIN") navigate("/admin/dashboard");
-            else navigate("/"); // Fallback
-
+            else navigate("/");
         } catch (err) {
             alert("Login failed");
         }
     };
 
     return (
-        <form onSubmit={handleSubmit} className="p-4 max-w-md mx-auto mt-10 space-y-4">
-            <input
-                type="email"
-                placeholder="Email"
-                className="w-full p-2 border"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-            />
-            <input
-                type="password"
-                placeholder="Password"
-                className="w-full p-2 border"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-            />
-            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
-                Login
-            </button>
-        </form>
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+            <form
+                onSubmit={handleSubmit}
+                className="bg-white p-8 rounded-lg shadow-md w-full max-w-md"
+            >
+                <h2 className="text-2xl font-bold text-center mb-6">Login</h2>
+
+                <input
+                    type="email"
+                    placeholder="Email"
+                    className="w-full p-3 mb-4 border rounded-md focus:outline-none focus:ring focus:border-blue-300"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                />
+                <input
+                    type="password"
+                    placeholder="Password"
+                    className="w-full p-3 mb-4 border rounded-md focus:outline-none focus:ring focus:border-blue-300"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                />
+
+                <button
+                    type="submit"
+                    className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+                >
+                    Login
+                </button>
+
+                <p className="mt-4 text-center text-sm text-gray-600">
+                    Don't have an account?{" "}
+                    <Link to="/register" className="text-blue-600 hover:underline">
+                        Sign Up here
+                    </Link>
+                </p>
+            </form>
+        </div>
     );
 };
 

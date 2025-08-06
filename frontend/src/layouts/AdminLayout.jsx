@@ -29,6 +29,18 @@ const AdminLayout = () => {
                     Get Managers
                 </button>
                 <button
+                    onClick={() => setViewType("REVIEWS")}
+                    className="w-full bg-orange-500 px-4 py-2 rounded"
+                >
+                    Get Reviews
+                </button>
+                <button
+                    onClick={() => setViewType("BOOKINGS")}
+                    className="w-full bg-yellow-500 px-4 py-2 rounded"
+                >
+                    Get Bookings
+                </button>
+                <button
                     onClick={() => setViewType("ADD_MANAGER")}
                     className="w-full bg-purple-500 px-4 py-2 rounded"
                 >

@@ -23,15 +23,6 @@ export const AuthProvider = ({ children }) => {
     const [name, setName] = useState(localStorage.getItem("name") || null);
     const [id, setId] = useState(localStorage.getItem("id") || null);
 
-    // let parsedUser = null;
-    // try {
-    //     parsedUser = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null;
-    // } catch (err) {
-    //     console.error("Error parsing user from localStorage", err);
-    //     localStorage.removeItem("user");
-    // }
-
-    // const [user, setUser] = useState(parsedUser);
 
     const login = ({ token, role, name, id }) => {
         setToken(token);
@@ -48,7 +39,6 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         setToken(null);
         setRole(null);
-        // setUser(null);
         setName(null);
         setId(null);
         localStorage.clear();

@@ -51,3 +51,36 @@ export const registerManager = async (managerData, token) => {
   );
   return res.data;
 };
+
+// Get reviews by turf ID
+export const getReviewsByTurfId = async (turfId, token) => {
+  const res = await axios.get(
+    `${BASE_URL}/${turfId}/reviews`,
+    authHeaders(token)
+  );
+  return res.data;
+};
+
+// Get bookings by turfId
+export const getBookingsByTurfId = async (turfId, token) => {
+  const res = await axios.get(
+    `${BASE_URL}/bookings/${turfId}`,
+    authHeaders(token)
+  );
+  return res.data;
+};
+
+// Get booking by booking ID
+export const getBookingById = async (bookingId, token) => {
+  const res = await axios.get(
+    `${BASE_URL}/booking/${bookingId}`,
+    authHeaders(token)
+  );
+  return res.data;
+};
+
+// Get all turfs
+export const getAllTurfs = async (token) => {
+  const res = await axios.get(`${BASE_URL}/turfs`, authHeaders(token));
+  return res.data;
+};

@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
-// import Register from "./pages/Register";
+import Register from "./pages/Register";
 import HomePage from "./pages/HomePage";
 import TurfDetails from "./pages/TurfDetails";
 
@@ -14,11 +14,15 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 
 import NotFound from "./pages/NotFound";
 import PrivateRoute from "./routes/PrivateRoute";
+import Navbar from "./components/Navbar";
 
 
 function App() {
   return (
     <BrowserRouter>
+
+      <Navbar />
+
       <Routes>
 
         <Route path="/" element={<HomePage />} />
@@ -27,7 +31,7 @@ function App() {
 
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
-        {/* <Route path="/register" element={<Register />} /> */}
+        <Route path="/register" element={<Register />} />
 
         {/* User Routes */}
         <Route
