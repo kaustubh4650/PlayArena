@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import Avatar from "react-avatar";
+import { FaMapMarkerAlt, FaRupeeSign, FaTag, FaCalendarAlt, FaClock } from "react-icons/fa";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { createBooking, createRazorpayOrder, validateSlotAvailability } from "../api/userApi";
+import { ToastContainer, toast } from "react-toastify";
+
 import {
     getTurfById,
     getSlotsByTurfId,
@@ -42,7 +44,10 @@ const TurfDetails = () => {
 
     const handleBookNow = async () => {
         if (!selectedSlot || !selectedDate) {
-            alert("Please select a slot and date.");
+            toast.error("Please select a slot and date!", {
+                position: "top-center",
+                autoClose: 2000,
+            });
             return;
         }
 
@@ -60,7 +65,10 @@ const TurfDetails = () => {
 
             const isAvailable = await validateSlotAvailability(selectedSlot.slotId, selectedDate, token);
             if (!isAvailable) {
-                alert("❌ This slot is already booked for the selected date. Please choose another slot.");
+                toast.error("❌ This slot is already booked for the selected date. Please choose another slot.", {
+                    position: "top-center",
+                    autoClose: 2000,
+                });
                 return;
             }
 
@@ -96,8 +104,10 @@ const TurfDetails = () => {
                     };
 
                     const bookingRes = await createBooking(bookingData, token);
-                    console.log("Booking successful:", bookingRes);
-                    // navigate("/user/dashboard");
+                    toast.success("Booking successful !", {
+                        position: "top-center",
+                        autoClose: 2000,
+                    });
                     navigate("/");
                 },
                 theme: {
@@ -107,17 +117,21 @@ const TurfDetails = () => {
 
             const rzp = new window.Razorpay(options);
 
-            //  Handle payment failure
             rzp.on("payment.failed", function (response) {
                 console.error("Payment failed:", response.error);
-                alert("❌ Payment failed. Please try again.");
+                toast.error("❌ Payment failed. Please try again.", {
+                    position: "top-center",
+                    autoClose: 2000,
+                });
 
             });
 
             rzp.open();
         } catch (error) {
-            console.error("Razorpay order creation failed", error);
-            alert("Something went wrong. Please try again.");
+            toast.error("Something went wrong. Please try again.", {
+                position: "top-center",
+                autoClose: 2000,
+            });
         }
     };
 
@@ -126,47 +140,60 @@ const TurfDetails = () => {
     if (!turf) return <div className="p-6">Loading...</div>;
 
     return (
-        <div className="p-6 max-w-4xl mx-auto">
-            <img
-                src={
-                    turf.imagePath
-                        ? `http://localhost:8080/${turf.imagePath}`
-                        : "/default-turf.jpg"
-                }
-                alt={turf.name}
-                className="w-full h-64 object-cover rounded-xl mb-6"
-            />
 
-            <h1 className="text-3xl font-bold mb-2">{turf.name}</h1>
-            <p className="text-gray-600">{turf.location}</p>
-            <p className="text-green-600 font-semibold mb-4">
-                ₹{turf.pricePerHour}/hr
-            </p>
-            <p className="text-gray-700 mb-6">{turf.description}</p>
+        <div className="p-6 max-w-6xl mx-auto space-y-8">
 
-            <div className="mb-6">
-                <label className="block mb-2 font-medium">Select Date:</label>
-                <input
-                    type="date"
-                    className="border rounded px-3 py-2 w-full"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
+            <ToastContainer />
+
+            <div className="flex flex-col md:flex-row gap-6">
+
+                <img
+                    src={turf.imagePath ? `http://localhost:8080/${turf.imagePath}` : "/default-turf.jpg"}
+                    alt={turf.name}
+                    className="w-full md:w-1/2 h-72 object-cover rounded-xl shadow-md"
                 />
+
+
+                <div className="flex-1 space-y-4">
+                    <h1 className="text-3xl font-bold">{turf.name}</h1>
+                    <p className="text-gray-600 flex items-center gap-2">
+                        <FaMapMarkerAlt className="text-blue-500" /> {turf.location}
+                    </p>
+                    <p className="text-green-600 flex items-center gap-2 text-lg font-semibold">
+                        <FaRupeeSign /> {turf.pricePerHour}/hr
+                    </p>
+                    <p className="text-gray-700 flex items-center gap-2">
+                        <FaTag className="text-purple-500" /> {turf.category.toLowerCase()}
+                    </p>
+                    <p className="text-gray-600">{turf.description}</p>
+                </div>
             </div>
 
-            <div className="mb-6">
-                <h2 className="text-xl font-semibold mb-2">Available Slots</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                <div className="flex flex-col gap-4">
-                    <label className="font-medium text-lg">Select a Slot:</label>
+                <div>
+                    <label className="mb-2 font-medium flex items-center gap-2">
+                        <FaCalendarAlt /> Select Date:
+                    </label>
+                    <input
+                        type="date"
+                        className="border rounded px-4 py-2 w-full"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                    />
+                </div>
 
+                <div>
+                    <label className="mb-2 font-medium flex items-center gap-2">
+                        <FaClock /> Select Slot:
+                    </label>
                     <select
                         value={selectedSlot?.slotId || ""}
                         onChange={(e) => {
                             const selected = slots.find(slot => slot.slotId === parseInt(e.target.value));
                             setSelectedSlot(selected);
                         }}
-                        className="border rounded px-4 py-2 text-base"
+                        className="border rounded px-4 py-2 w-full"
                     >
                         <option value="">-- Choose a slot --</option>
                         {slots.map((slot) => (
@@ -179,18 +206,17 @@ const TurfDetails = () => {
                             </option>
                         ))}
                     </select>
-
-                    {selectedSlot && (
-                        <div className="p-4 border rounded bg-blue-50">
-                            <p className="font-medium">
-                                Selected Slot: {selectedSlot.startTime} - {selectedSlot.endTime}
-                            </p>
-                            <p className="text-sm">Status: {selectedSlot.status}</p>
-                        </div>
-                    )}
                 </div>
-
             </div>
+
+            {selectedSlot && (
+                <div className="p-4 border rounded bg-blue-50 mt-4">
+                    <p className="font-medium">
+                        Selected Slot: {selectedSlot.startTime} - {selectedSlot.endTime}
+                    </p>
+                    <p className="text-sm">Status: {selectedSlot.status}</p>
+                </div>
+            )}
 
             <button
                 onClick={handleBookNow}
@@ -198,6 +224,7 @@ const TurfDetails = () => {
             >
                 Book Now
             </button>
+
 
             <div className="mt-10">
                 <h2 className="text-xl font-semibold mb-2">Reviews</h2>
@@ -209,7 +236,6 @@ const TurfDetails = () => {
                             key={review.reviewId}
                             className="border rounded-2xl shadow-md p-4 mb-4 bg-white flex justify-between items-start sm:items-center transition hover:shadow-lg"
                         >
-
                             <div className="flex gap-4 items-start max-w-[80%]">
                                 <Avatar name={review.userName} size="48" round="50%" />
                                 <div>
@@ -220,7 +246,6 @@ const TurfDetails = () => {
                                     </p>
                                 </div>
                             </div>
-
                             <div className="text-yellow-500 text-xl font-bold ml-4 whitespace-nowrap self-start">
                                 ⭐ {review.rating}
                             </div>

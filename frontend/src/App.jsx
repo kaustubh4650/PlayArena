@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import HomePage from "./pages/HomePage";
+import Turfs from "./pages/Turfs";
 import TurfDetails from "./pages/TurfDetails";
 
 import UserLayout from "./layouts/UserLayout";
@@ -15,63 +15,73 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import PrivateRoute from "./routes/PrivateRoute";
 import Navbar from "./components/Navbar";
+import Home from "./pages/Home";
+import Footer from "./components/Footer";
 
 
 function App() {
   return (
     <BrowserRouter>
+      <div className="min-h-screen flex flex-col">
 
-      <Navbar />
+        <Navbar />
 
-      <Routes>
 
-        <Route path="/" element={<HomePage />} />
+        <main className="flex-grow">
 
-        <Route path="/turfs/:turfId" element={<TurfDetails />} />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/turfs" element={<Turfs />} />
+            <Route path="/turfs/:turfId" element={<TurfDetails />} />
 
-        {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-        {/* User Routes */}
-        <Route
-          path="/user/*"
-          element={
-            <PrivateRoute allowedRole="USER">
-              <UserLayout />
-            </PrivateRoute>
-          }
-        >
-          <Route path="dashboard" element={<UserDashboard />} />
-        </Route>
+            {/* User Routes */}
+            <Route
+              path="/user/*"
+              element={
+                <PrivateRoute allowedRole="USER">
+                  <UserLayout />
+                </PrivateRoute>
+              }
+            >
+              <Route path="dashboard" element={<UserDashboard />} />
+            </Route>
 
-        {/* Manager Routes */}
-        <Route
-          path="/manager/*"
-          element={
-            <PrivateRoute allowedRole="MANAGER">
-              <ManagerLayout />
-            </PrivateRoute>
-          }
-        >
-          <Route path="dashboard" element={<ManagerDashboard />} />
-        </Route>
+            {/* Manager Routes */}
+            <Route
+              path="/manager/*"
+              element={
+                <PrivateRoute allowedRole="MANAGER">
+                  <ManagerLayout />
+                </PrivateRoute>
+              }
+            >
+              <Route path="dashboard" element={<ManagerDashboard />} />
+            </Route>
 
-        {/* Admin Routes */}
-        <Route
-          path="/admin/*"
-          element={
-            <PrivateRoute allowedRole="ADMIN">
-              <AdminLayout />
-            </PrivateRoute>
-          }
-        >
-          <Route path="dashboard" element={<AdminDashboard />} />
-        </Route>
+            {/* Admin Routes */}
+            <Route
+              path="/admin/*"
+              element={
+                <PrivateRoute allowedRole="ADMIN">
+                  <AdminLayout />
+                </PrivateRoute>
+              }
+            >
+              <Route path="dashboard" element={<AdminDashboard />} />
+            </Route>
 
-        {/* Fallback Route */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+            {/* Fallback Route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+
+
+        <Footer />
+      </div>
     </BrowserRouter>
   );
 }

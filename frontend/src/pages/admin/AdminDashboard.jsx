@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useOutletContext } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
 import {
     getAllUsers,
     getAllManagers,
@@ -29,7 +30,7 @@ const AdminDashboard = () => {
     const [bookingDetails, setBookingDetails] = useState(null);
     const [filteredBookings, setFilteredBookings] = useState([]);
 
-
+    const [errors, setErrors] = useState({});
     const [newManager, setNewManager] = useState({
         name: "",
         email: "",
@@ -51,6 +52,30 @@ const AdminDashboard = () => {
         }
     }, [viewType, token]);
 
+    const validateForm = () => {
+        let newErrors = {};
+
+        if (!/^[A-Za-z\s]{3,}$/.test(newManager.name)) {
+            newErrors.name = "Name must be at least 3 letters and contain only letters";
+        }
+        if (!/\S+@\S+\.\S+/.test(newManager.email)) {
+            newErrors.email = "Please enter a valid email";
+        }
+        if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(newManager.password)) {
+            newErrors.password = "Password must be at least 6 characters and contain letters and numbers";
+        }
+        if (!/^[0-9]{10}$/.test(newManager.phone)) {
+            newErrors.phone = "Phone must be exactly 10 digits";
+        }
+        if (newManager.address.trim().length < 3) {
+            newErrors.address = "Address must be at least 3 characters";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+
     const viewDetails = async (id, type) => {
         const data =
             type === "USER" ? await getUserById(id, token) : await getManagerById(id, token);
@@ -61,12 +86,24 @@ const AdminDashboard = () => {
     const handleDelete = async (id) => {
         await deleteManagerById(id, token);
         getAllManagers(token).then(setManagers);
+        toast.success("Manager Removed !", {
+            position: "top-center",
+            autoClose: 2000,
+        });
         setSelected(null);
     };
 
     const handleAddManagerSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validateForm()) return;
+
         await registerManager(newManager, token);
+        toast.success("Manager Registered !", {
+            position: "top-center",
+            autoClose: 2000,
+        });
+
         getAllManagers(token).then(setManagers);
         setNewManager({
             name: "",
@@ -75,6 +112,7 @@ const AdminDashboard = () => {
             phone: "",
             address: "",
         });
+        setErrors({});
     };
 
     const fetchReviews = async (turfId) => {
@@ -113,102 +151,129 @@ const AdminDashboard = () => {
 
     return (
         <div>
+            <ToastContainer />
+
+
             {viewType === "ADD_MANAGER" && (
+
                 <form
                     onSubmit={handleAddManagerSubmit}
-                    className="max-w-md space-y-4 bg-gray-100 p-4 rounded shadow mb-6"
+                    className="max-w-lg mx-auto bg-white p-6 rounded-lg shadow space-y-4"
                 >
-                    <h2 className="text-lg font-bold">Add New Manager</h2>
+                    <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">
+                        Add New Manager
+                    </h2>
+
                     <input
                         type="text"
                         placeholder="Name"
-                        className="w-full p-2 border"
+                        className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         value={newManager.name}
                         onChange={(e) => setNewManager({ ...newManager, name: e.target.value })}
                         required
                     />
+                    {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+
                     <input
                         type="email"
                         placeholder="Email"
-                        className="w-full p-2 border"
+                        className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         value={newManager.email}
                         onChange={(e) => setNewManager({ ...newManager, email: e.target.value })}
                         required
                     />
+                    {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+
                     <input
                         type="password"
                         placeholder="Password"
-                        className="w-full p-2 border"
+                        className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         value={newManager.password}
                         onChange={(e) => setNewManager({ ...newManager, password: e.target.value })}
                         required
                     />
+                    {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
+
                     <input
                         type="text"
                         placeholder="Phone"
-                        className="w-full p-2 border"
+                        className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         value={newManager.phone}
                         onChange={(e) => setNewManager({ ...newManager, phone: e.target.value })}
+                        maxLength={10}
                         required
                     />
+                    {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
+
+
                     <input
                         type="text"
                         placeholder="Address"
-                        className="w-full p-2 border"
+                        className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         value={newManager.address}
                         onChange={(e) => setNewManager({ ...newManager, address: e.target.value })}
                         required
                     />
-                    <button
-                        type="submit"
-                        className="bg-green-600 text-white px-4 py-2 rounded"
-                    >
-                        Create Manager
-                    </button>
+                    {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
+
+                    <div className="pt-2">
+                        <button
+                            type="submit"
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors"
+                        >
+                            Create Manager
+                        </button>
+                    </div>
                 </form>
+
             )}
 
             {(viewType === "USERS" || viewType === "MANAGERS") && (
-                <table className="min-w-full table-auto border border-gray-300">
-                    <thead className="bg-gray-200">
-                        <tr>
-                            <th className="px-4 py-2">Name</th>
-                            <th className="px-4 py-2">Email</th>
-                            <th className="px-4 py-2">Phone</th>
-                            <th className="px-4 py-2">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {(viewType === "USERS" ? users : managers).map((item) => {
-                            const id = item.userid || item.managerId;
-                            return (
-                                <tr key={id} className="border-t">
-                                    <td className="px-4 py-2">{item.name}</td>
-                                    <td className="px-4 py-2">{item.email}</td>
-                                    <td className="px-4 py-2">{item.phone}</td>
-                                    <td className="px-4 py-2 space-x-2">
-                                        <button
-                                            onClick={() =>
-                                                viewDetails(id, viewType === "USERS" ? "USER" : "MANAGER")
-                                            }
-                                            className="bg-blue-500 text-white px-2 py-1 rounded"
-                                        >
-                                            View
-                                        </button>
-                                        {viewType === "MANAGERS" && (
+
+                <div className="overflow-x-auto rounded-lg shadow">
+                    <table className="min-w-full border-collapse border border-gray-300">
+                        <thead className="bg-gray-300 text-black uppercase text-sm rounded-t-lg">
+                            <tr>
+                                <th className="px-6 py-3 text-left">Name</th>
+                                <th className="px-6 py-3 text-left">Email</th>
+                                <th className="px-6 py-3 text-left">Phone</th>
+                                <th className="px-6 py-3 text-left">Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody className="divide-y divide-gray-200 bg-white">
+                            {(viewType === "USERS" ? users : managers).map((item) => {
+                                const id = item.userid || item.managerId;
+                                return (
+                                    <tr key={id} className="hover:bg-gray-200 transition-colors">
+                                        <td className="px-6 py-3">{item.name}</td>
+                                        <td className="px-6 py-3">{item.email}</td>
+                                        <td className="px-6 py-3">{item.phone}</td>
+                                        <td className="px-6 py-3 space-x-2">
                                             <button
-                                                onClick={() => handleDelete(id)}
-                                                className="bg-red-500 text-white px-2 py-1 rounded"
+                                                onClick={() =>
+                                                    viewDetails(id, viewType === "USERS" ? "USER" : "MANAGER")
+                                                }
+                                                className="bg-blue-500 text-white px-2 py-1 rounded"
                                             >
-                                                Delete
+                                                View
                                             </button>
-                                        )}
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                                            {viewType === "MANAGERS" && (
+                                                <button
+                                                    onClick={() => handleDelete(id)}
+                                                    className="bg-red-500 text-white px-2 py-1 rounded"
+                                                >
+                                                    Delete
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+
             )}
 
 
@@ -235,30 +300,33 @@ const AdminDashboard = () => {
                     </select>
 
                     {reviews.length > 0 ? (
-                        <table className="w-full border border-gray-300 text-sm">
-                            <thead className="bg-gray-100">
-                                <tr>
-                                    <th className="border p-2">Review ID</th>
-                                    <th className="border p-2">User</th>
-                                    <th className="border p-2">Rating</th>
-                                    <th className="border p-2">Comment</th>
-                                    <th className="border p-2">Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {reviews.map((review) => (
-                                    <tr key={review.reviewId}>
-                                        <td className="border p-2">{review.reviewId}</td>
-                                        <td className="border p-2">{review.userName}</td>
-                                        <td className="border p-2">{review.rating}</td>
-                                        <td className="border p-2">{review.comment}</td>
-                                        <td className="border p-2">
-                                            {review.reviewedOn.slice(0, 10)}
-                                        </td>
+
+                        <div className="overflow-x-auto rounded-lg shadow">
+                            <table className="w-full border-collapse border border-gray-300 text-md">
+                                <thead className="bg-gray-300 text-black uppercase text-sm rounded-t-lg">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left">Review ID</th>
+                                        <th className="px-6 py-3 text-left">User</th>
+                                        <th className="px-6 py-3 text-left">Rating</th>
+                                        <th className="px-6 py-3 text-left">Comment</th>
+                                        <th className="px-6 py-3 text-left">Date</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+
+                                <tbody className="divide-y divide-gray-200 bg-white">
+                                    {reviews.map((review) => (
+                                        <tr key={review.reviewId} className="hover:bg-gray-200 transition-colors">
+                                            <td className="px-6 py-3">{review.reviewId}</td>
+                                            <td className="px-6 py-3">{review.userName}</td>
+                                            <td className="px-6 py-3">{review.rating}</td>
+                                            <td className="px-6 py-3">{review.comment}</td>
+                                            <td className="px-6 py-3">{review.reviewedOn.slice(0, 10)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
                     ) : (
                         formData.turfId && (
                             <p className="text-sm text-gray-500">
@@ -290,53 +358,58 @@ const AdminDashboard = () => {
                         ))}
                     </select>
 
-                    {/* Table */}
                     {filteredBookings.length > 0 ? (
-                        <table className="w-full border border-gray-300 text-sm">
-                            <thead className="bg-gray-100">
-                                <tr>
-                                    <th className="border p-2">Booking ID</th>
-                                    <th className="border p-2">User</th>
-                                    <th className="border p-2">Date</th>
-                                    <th className="border p-2">Time</th>
-                                    <th className="border p-2">Amount</th>
-                                    <th className="border p-2">Status</th>
-                                    <th className="border p-2">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {[...filteredBookings]
-                                    .sort((a, b) => a.bookingId - b.bookingId)
-                                    .map((booking) => (
-                                        <tr key={booking.bookingId}>
-                                            <td className="border p-2">{booking.bookingId}</td>
-                                            <td className="border p-2">{booking.userName}</td>
-                                            <td className="border p-2">{booking.slotDate}</td>
-                                            <td className="border p-2">{booking.startTime} - {booking.endTime}</td>
-                                            <td className="border p-2">₹{booking.amount}</td>
-                                            <td className="border p-2">
-                                                <span
-                                                    className={`px-2 py-1 rounded-full text-white text-sm font-semibold
-                                            ${booking.status === "CONFIRMED" ? "bg-green-600" : ""}
-                                            ${booking.status === "CANCELLED" ? "bg-red-600" : ""}
-                                            ${booking.status === "BOOKED" ? "bg-blue-600" : ""}
-                                        `}
-                                                >
-                                                    {booking.status}
-                                                </span>
-                                            </td>
-                                            <td className="border p-2">
-                                                <button
-                                                    onClick={() => handleViewBooking(booking.bookingId)}
-                                                    className="bg-blue-500 text-white px-2 py-1 rounded"
-                                                >
-                                                    View
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                            </tbody>
-                        </table>
+
+                        <div className="overflow-x-auto rounded-lg shadow">
+                            <table className="w-full border-collapse border border-gray-300 text-md">
+                                <thead className="bg-gray-300 text-black uppercase text-sm rounded-t-lg">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left">Booking ID</th>
+                                        <th className="px-6 py-3 text-left">User</th>
+                                        <th className="px-6 py-3 text-left">Date</th>
+                                        <th className="px-6 py-3 text-left">Time</th>
+                                        <th className="px-6 py-3 text-left">Amount</th>
+                                        <th className="px-6 py-3 text-left">Status</th>
+                                        <th className="px-6 py-3 text-left">Action</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody className="divide-y divide-gray-200 bg-white">
+                                    {[...filteredBookings]
+                                        .sort((a, b) => a.bookingId - b.bookingId)
+                                        .map((booking) => (
+                                            <tr key={booking.bookingId} className="hover:bg-gray-200 transition-colors">
+                                                <td className="px-6 py-3">{booking.bookingId}</td>
+                                                <td className="px-6 py-3">{booking.userName}</td>
+                                                <td className="px-6 py-3">{booking.slotDate}</td>
+                                                <td className="px-6 py-3">{booking.startTime} - {booking.endTime}</td>
+                                                <td className="px-6 py-3">₹{booking.amount}</td>
+                                                <td className="px-6 py-3">
+                                                    <span
+                                                        className={`px-2 py-1 rounded-full text-white text-sm font-semibold
+                                    ${booking.status === "CONFIRMED" ? "bg-green-600" : ""}
+                                    ${booking.status === "CANCELLED" ? "bg-red-600" : ""}
+                                  
+                                `}
+                                                    >
+                                                        {booking.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-3">
+                                                    <button
+                                                        onClick={() => handleViewBooking(booking.bookingId)}
+                                                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors"
+                                                    >
+                                                        View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+
                     ) : (
                         formData.turfId && (
                             <p className="text-sm text-gray-500">

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { getUserById } from "../api/userApi";
 import Avatar from "react-avatar";
 import { Menu, X } from "lucide-react";
 
@@ -10,17 +9,9 @@ const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const [userName, setUserName] = useState(name || "");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-    useEffect(() => {
-        if (!name && isLoggedIn && id && token) {
-            getUserById(id, token)
-                .then((userData) => setUserName(userData.name))
-                .catch(() => setUserName("User"));
-        }
-    }, [id, token, isLoggedIn, name]);
 
     const handleLogout = () => {
         logout();
@@ -33,8 +24,13 @@ const Navbar = () => {
 
     return (
         <nav className="sticky top-0 z-50 bg-white shadow-md px-4 py-3 flex justify-between items-center">
-            <Link to="/" className="text-xl font-bold text-green-600">
-                PlayArena
+            <Link to="/" className="flex items-center">
+                <img
+                    src="/images/icon.png"
+                    alt="PlayArena Logo"
+                    className="h-8 w-full object-contain"
+                />
+                <span className="text-xl font-bold text-green-600 py-1">PlayArena</span>
             </Link>
 
             {/* Mobile Menu Toggle */}
@@ -59,8 +55,8 @@ const Navbar = () => {
                             className="flex items-center gap-2 cursor-pointer"
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                         >
-                            <Avatar name={userName} size="36" round="50%" />
-                            <span className="text-gray-700 font-medium">{userName}</span>
+                            <Avatar name={name} size="36" round="50%" />
+                            <span className="text-gray-700 font-medium">{name}</span>
                         </div>
 
                         {isDropdownOpen && (
@@ -112,19 +108,31 @@ const Navbar = () => {
                         ) : (
                             <>
                                 <div className="flex items-center gap-3">
-                                    <Avatar name={userName} size="36" round="50%" />
-                                    <span className="font-medium">{userName}</span>
+                                    <Avatar name={name} size="36" round="50%" />
+                                    <span className="font-medium">{name}</span>
                                 </div>
-                                {!location.pathname.includes("dashboard") && (
+                                {location.pathname.includes("dashboard") ? (
+                                    <Link
+                                        to="/"
+                                        className="block px-4 py-2 hover:bg-gray-100 text-sm"
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        Home
+                                    </Link>
+                                ) : (
                                     <Link
                                         to={`/${role.toLowerCase()}/dashboard`}
-                                        className="text-blue-600 hover:underline"
+                                        className="block px-4 py-2 hover:bg-gray-100 text-sm"
+                                        onClick={() => setIsMenuOpen(false)}
                                     >
                                         Dashboard
                                     </Link>
                                 )}
                                 <button
-                                    onClick={handleLogout}
+                                    onClick={() => {
+                                        setIsMenuOpen(false);
+                                        handleLogout();
+                                    }}
                                     className="text-red-500 hover:underline"
                                 >
                                     Logout
@@ -139,3 +147,5 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
+

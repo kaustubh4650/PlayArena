@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+
 
 const Login = () => {
     const [email, setEmail] = useState("");
@@ -21,6 +23,11 @@ const Login = () => {
                 password,
             });
 
+            toast.success("Login Successful !", {
+                position: "top-center",
+                autoClose: 2000,
+            });
+
             const { token, role, name, id } = res.data;
 
             login({ token, role, name, id });
@@ -31,12 +38,17 @@ const Login = () => {
             else if (role === "ADMIN") navigate("/admin/dashboard");
             else navigate("/");
         } catch (err) {
-            alert("Login failed");
+            toast.error("Login failed !", {
+                position: "top-center",
+                autoClose: 2000,
+            });
         }
     };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
+            <ToastContainer />
+
             <form
                 onSubmit={handleSubmit}
                 className="bg-white p-8 rounded-lg shadow-md w-full max-w-md"
